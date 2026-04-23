@@ -113,8 +113,6 @@ body {
 }
 
 .code-block.selected-block {
-  background: rgba(110, 44, 58, 0.10);
-  border-color: rgba(110, 44, 58, 0.22);
   box-shadow: 0 0 0 1px rgba(110, 44, 58, 0.08);
 }
 
@@ -126,6 +124,28 @@ body {
 .code-block.erasing {
   opacity: 0;
   transform: scale(0.96);
+}
+
+/* ---------- temporary color groups ---------- */
+
+.code-block.color-0 {
+  background: rgba(110, 44, 58, 0.10);
+  border-color: rgba(110, 44, 58, 0.22);
+}
+
+.code-block.color-1 {
+  background: rgba(242, 179, 122, 0.16);
+  border-color: rgba(242, 179, 122, 0.28);
+}
+
+.code-block.color-2 {
+  background: rgba(79, 127, 168, 0.14);
+  border-color: rgba(79, 127, 168, 0.26);
+}
+
+.code-block.color-3 {
+  background: rgba(90, 154, 106, 0.14);
+  border-color: rgba(90, 154, 106, 0.26);
 }
 
 /* ---------- revolving state ---------- */
