@@ -140,24 +140,15 @@ function buildPanels() {
 
     panel.appendChild(label);
 
-    panel.addEventListener("click", (e) => {
-      if (dragJustHappened) return;
-      e.stopPropagation();
-
-      if (type === activeFrontType) {
-        openPanelCode(type);
-      }
-    });
-
-    panel.addEventListener("touchend", (e) => {
+    const openIfTap = (e) => {
       if (dragJustHappened) return;
       e.preventDefault();
       e.stopPropagation();
+      openPanelCode(type);
+    };
 
-      if (type === activeFrontType) {
-        openPanelCode(type);
-      }
-    });
+    panel.addEventListener("click", openIfTap);
+    panel.addEventListener("touchend", openIfTap, { passive: false });
 
     stack.appendChild(panel);
   });
@@ -257,7 +248,6 @@ function snapToNearest() {
       render();
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
-
       status.textContent = `${prettyLabel(activeFrontType)} ready`;
       return;
     }
@@ -313,7 +303,7 @@ function onMove(x) {
   const dx = x - lastX;
   const dt = Math.max(1, now - lastTime);
 
-  if (Math.abs(x - startX) > 4) moved = true;
+  if (Math.abs(x - startX) > 6) moved = true;
 
   rotation -= dx / 90;
   velocity = -(dx / dt) * 0.18;
@@ -332,7 +322,7 @@ function onEnd() {
     dragJustHappened = true;
     setTimeout(() => {
       dragJustHappened = false;
-    }, 120);
+    }, 180);
   }
 
   startMomentum();
