@@ -26,6 +26,8 @@ let lastTime = 0;
 let moved = false;
 let dragJustHappened = false;
 
+const COLOR_COUNT = 4;
+
 function prettyLabel(type) {
   return type.toUpperCase();
 }
@@ -334,29 +336,65 @@ function getSelectedBlockCount() {
   return codeView.querySelectorAll(".code-block.selected-block").length;
 }
 
+function setBlockColor(block, colorIndex) {
+  for (let i = 0; i < COLOR_COUNT; i += 1) {
+    block.classList.remove(`color-${i}`);
+  }
+
+  block.dataset.colorGroup = String(colorIndex);
+  block.classList.add(`color-${colorIndex}`);
+}
+
+function cycleBlockColor(block, direction) {
+  const current = Number(block.dataset.colorGroup || 0);
+  const next = (current + direction + COLOR_COUNT) % COLOR_COUNT;
+  setBlockColor(block, next);
+
+  const selectedCount = getSelectedBlockCount();
+  status.textContent = selectedCount
+    ? `${selectedCount} block${selectedCount === 1 ? "" : "s"} selected · group ${next + 1}`
+    : `Group ${next + 1}`;
+}
+
+function getGroupedSelectedBlocks(sourceBlock) {
+  const colorGroup = sourceBlock.dataset.colorGroup;
+  return [...codeView.querySelectorAll(".code-block.selected-block")]
+    .filter(block => block.dataset.colorGroup === colorGroup);
+}
+
 function enableCodeBlockSelection() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
   blocks.forEach((block) => {
-    let dragStarted = false;
+    setBlockColor(block, 0);
+
     let pointerId = null;
-    let startBlockX = 0;
-    let startBlockY = 0;
+    let startX = 0;
+    let startY = 0;
     let dx = 0;
     let dy = 0;
+    let dragStarted = false;
+    let swipeMode = false;
+    let dragGroup = [];
 
-    const resetBlock = () => {
-      block.classList.remove("dragging");
-      block.style.transform = "";
-      block.style.opacity = "";
+    const resetDraggedGroup = () => {
+      dragGroup.forEach((groupBlock) => {
+        groupBlock.classList.remove("dragging");
+        groupBlock.style.transform = "";
+        groupBlock.style.opacity = "";
+      });
+
+      dragGroup = [];
       pointerId = null;
-      dragStarted = false;
       dx = 0;
       dy = 0;
+      dragStarted = false;
+      swipeMode = false;
     };
 
     const toggleSelection = (e) => {
-      if (dragStarted) return;
+      if (dragStarted || swipeMode) return;
+
       e.preventDefault();
       e.stopPropagation();
 
@@ -374,60 +412,95 @@ function enableCodeBlockSelection() {
       if (!block.classList.contains("selected-block")) return;
 
       pointerId = e.pointerId;
-      startBlockX = e.clientX;
-      startBlockY = e.clientY;
+      startX = e.clientX;
+      startY = e.clientY;
       dx = 0;
       dy = 0;
       dragStarted = false;
+      swipeMode = false;
+      dragGroup = [];
     });
 
     block.addEventListener("pointermove", (e) => {
       if (pointerId !== e.pointerId) return;
       if (!block.classList.contains("selected-block")) return;
 
-      dx = e.clientX - startBlockX;
-      dy = e.clientY - startBlockY;
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
 
-      if (!dragStarted && Math.hypot(dx, dy) > 8) {
-        dragStarted = true;
-        block.classList.add("dragging");
+      if (!dragStarted && !swipeMode) {
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+
+        if (absX > 18 && absX > absY * 1.2) {
+          swipeMode = true;
+        } else if (Math.hypot(dx, dy) > 8) {
+          dragStarted = true;
+          dragGroup = getGroupedSelectedBlocks(block);
+
+          dragGroup.forEach((groupBlock) => {
+            groupBlock.classList.add("dragging");
+          });
+        }
       }
 
       if (!dragStarted) return;
 
       e.preventDefault();
-      block.style.transform = `translate(${dx}px, ${dy}px)`;
-      block.style.opacity = "0.85";
+
+      dragGroup.forEach((groupBlock) => {
+        groupBlock.style.transform = `translate(${dx}px, ${dy}px)`;
+        groupBlock.style.opacity = "0.85";
+      });
     });
 
-    const endDrag = (e) => {
+    const endPointer = (e) => {
       if (pointerId !== e.pointerId) return;
 
-      const distance = Math.hypot(dx, dy);
-      const eraseThreshold = 120;
-
-      if (dragStarted && distance > eraseThreshold) {
-        block.classList.remove("dragging");
-        block.classList.add("erasing");
-
-        setTimeout(() => {
-          block.remove();
-
-          const remainingBlocks = codeView.querySelectorAll(".code-block").length;
-          if (!remainingBlocks) {
-            codeView.innerHTML = "";
-            status.textContent = "All blocks erased";
-          } else {
-            status.textContent = "Block erased";
-          }
-        }, 180);
-      } else {
-        resetBlock();
+      if (swipeMode) {
+        if (Math.abs(dx) > 24) {
+          const direction = dx > 0 ? 1 : -1;
+          cycleBlockColor(block, direction);
+        }
+        resetDraggedGroup();
+        return;
       }
+
+      if (dragStarted) {
+        const distance = Math.hypot(dx, dy);
+        const eraseThreshold = 120;
+
+        if (distance > eraseThreshold) {
+          const blocksToErase = [...dragGroup];
+
+          blocksToErase.forEach((groupBlock) => {
+            groupBlock.classList.remove("dragging");
+            groupBlock.classList.add("erasing");
+          });
+
+          setTimeout(() => {
+            blocksToErase.forEach((groupBlock) => groupBlock.remove());
+
+            const remainingBlocks = codeView.querySelectorAll(".code-block").length;
+            if (!remainingBlocks) {
+              codeView.innerHTML = "";
+              status.textContent = "All blocks erased";
+            } else {
+              status.textContent = "Grouped block erase";
+            }
+          }, 180);
+        } else {
+          resetDraggedGroup();
+        }
+
+        return;
+      }
+
+      resetDraggedGroup();
     };
 
-    block.addEventListener("pointerup", endDrag);
-    block.addEventListener("pointercancel", resetBlock);
+    block.addEventListener("pointerup", endPointer);
+    block.addEventListener("pointercancel", resetDraggedGroup);
   });
 }
 
@@ -453,7 +526,7 @@ function renderCodeContent(type, content) {
   codeView.innerHTML = blocks
     .map(
       (block, index) => `
-        <div class="code-block" data-block-index="${index}">
+        <div class="code-block" data-block-index="${index}" data-color-group="0">
           <pre>${escapeHtml(block.trim())}</pre>
         </div>
       `
