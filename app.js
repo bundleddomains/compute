@@ -1,8 +1,11 @@
 const pasteWrap = document.getElementById("pasteWrap");
 const pasteField = document.getElementById("pasteField");
+const workspace = document.getElementById("workspace");
 const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const status = document.getElementById("status");
+const viewerTitle = document.getElementById("viewerTitle");
+const codeViewer = document.getElementById("codeViewer");
 
 const panelStore = {
   html: "",
@@ -12,7 +15,7 @@ const panelStore = {
 };
 
 let activeTypes = [];
-let selectedType = null;
+let activeFrontType = null;
 
 let rotation = 0;
 let velocity = 0;
@@ -111,16 +114,18 @@ function loadCode(text) {
     return;
   }
 
-  selectedType = activeTypes[0];
   rotation = 0;
   velocity = 0;
+  activeFrontType = activeTypes[0];
 
   buildPanels();
   render();
 
   pasteWrap.classList.add("hidden");
-  scene.classList.remove("hidden");
+  workspace.classList.remove("hidden");
 
+  viewerTitle.textContent = "CODE VIEWER";
+  codeViewer.textContent = "Tap the front panel to view its saved code.";
   status.textContent = `Loaded ${activeTypes.map(t => t.toUpperCase()).join(" · ")}`;
 }
 
@@ -141,14 +146,20 @@ function buildPanels() {
     panel.addEventListener("click", (e) => {
       if (dragJustHappened) return;
       e.stopPropagation();
-      selectPanel(type);
+
+      if (type === activeFrontType) {
+        openPanelCode(type);
+      }
     });
 
     panel.addEventListener("touchend", (e) => {
       if (dragJustHappened) return;
       e.preventDefault();
       e.stopPropagation();
-      selectPanel(type);
+
+      if (type === activeFrontType) {
+        openPanelCode(type);
+      }
     });
 
     stack.appendChild(panel);
@@ -168,6 +179,15 @@ function shortestStepDiff(from, to) {
   if (diff < -total / 2) diff += total;
 
   return diff;
+}
+
+function getFrontIndex() {
+  return wrapIndex(Math.round(rotation));
+}
+
+function updateActiveFrontType() {
+  if (!activeTypes.length) return;
+  activeFrontType = activeTypes[getFrontIndex()];
 }
 
 function getPanelVisual(stepOffset) {
@@ -198,6 +218,8 @@ function getPanelVisual(stepOffset) {
 }
 
 function render() {
+  updateActiveFrontType();
+
   const panels = [...document.querySelectorAll(".panel")];
 
   panels.forEach((panel) => {
@@ -213,14 +235,15 @@ function render() {
     panel.style.background = visual.background;
     panel.style.boxShadow = visual.boxShadow;
 
-    panel.classList.toggle("selected", type === selectedType);
+    panel.classList.toggle("active-front", type === activeFrontType);
+    panel.classList.toggle("has-content", !!panelStore[type].trim());
   });
 }
 
-function selectPanel(type) {
-  selectedType = type;
-  render();
-  status.textContent = `${type.toUpperCase()} selected · content stored`;
+function openPanelCode(type) {
+  viewerTitle.textContent = `${prettyLabel(type)} CODE`;
+  codeViewer.textContent = panelStore[type] || `${prettyLabel(type)} is empty.`;
+  status.textContent = `${prettyLabel(type)} opened`;
 }
 
 function snapToNearest() {
@@ -237,9 +260,7 @@ function snapToNearest() {
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
 
-      const index = wrapIndex(Math.round(rotation));
-      selectedType = activeTypes[index];
-      render();
+      status.textContent = `${prettyLabel(activeFrontType)} ready`;
       return;
     }
 
@@ -327,9 +348,7 @@ pasteField.addEventListener("paste", (e) => {
 });
 
 pasteField.addEventListener("keydown", (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
-    return;
-  }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") return;
 
   if (e.key === "Enter" && pasteField.value.trim()) {
     e.preventDefault();
