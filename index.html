@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HTMLellow Canvas</title>
+  <title>HTMLO Canvas</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -18,8 +18,17 @@
       ></textarea>
     </div>
 
-    <div id="scene" class="scene hidden">
-      <div id="stack" class="stack"></div>
+    <div id="workspace" class="workspace hidden">
+      <div class="viewer-wrap">
+        <div class="viewer-header">
+          <div id="viewerTitle" class="viewer-title">CODE VIEWER</div>
+        </div>
+        <pre id="codeViewer" class="code-viewer">Tap the front panel to view its saved code.</pre>
+      </div>
+
+      <div id="scene" class="scene">
+        <div id="stack" class="stack"></div>
+      </div>
     </div>
 
     <div id="status" class="status">Paste code to begin</div>
