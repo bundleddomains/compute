@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pencil Tip</title>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f3efe8;
+    overflow: hidden;
+  }
+
+  .tip-wrap {
+    position: relative;
+    width: 140px;
+    height: 60px;
+    transform: rotate(-8deg);
+  }
+
+  .wood {
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(100% 0, 100% 100%, 0 50%);
+    background: #d6b38a;
+  }
+
+  .lead {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 28px;
+    height: 16px;
+    transform: translateY(-50%);
+    clip-path: polygon(100% 0, 100% 100%, 0 50%);
+    background: #2f2f35;
+  }
+</style>
+</head>
+
+<body>
+  <div class="tip-wrap">
+    <div class="wood"></div>
+    <div class="lead"></div>
+  </div>
+</body>
+</html>
