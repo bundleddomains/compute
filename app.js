@@ -330,23 +330,104 @@ function splitSvgIntoBlocks(svgText) {
   return blocks;
 }
 
+function getSelectedBlockCount() {
+  return codeView.querySelectorAll(".code-block.selected-block").length;
+}
+
 function enableCodeBlockSelection() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
   blocks.forEach((block) => {
+    let dragStarted = false;
+    let pointerId = null;
+    let startBlockX = 0;
+    let startBlockY = 0;
+    let dx = 0;
+    let dy = 0;
+
+    const resetBlock = () => {
+      block.classList.remove("dragging");
+      block.style.transform = "";
+      block.style.opacity = "";
+      pointerId = null;
+      dragStarted = false;
+      dx = 0;
+      dy = 0;
+    };
+
     const toggleSelection = (e) => {
+      if (dragStarted) return;
       e.preventDefault();
       e.stopPropagation();
+
       block.classList.toggle("selected-block");
 
-      const selectedCount = codeView.querySelectorAll(".code-block.selected-block").length;
+      const selectedCount = getSelectedBlockCount();
       status.textContent = selectedCount
         ? `${selectedCount} block${selectedCount === 1 ? "" : "s"} selected`
         : "No blocks selected";
     };
 
     block.addEventListener("click", toggleSelection);
-    block.addEventListener("touchend", toggleSelection, { passive: false });
+
+    block.addEventListener("pointerdown", (e) => {
+      if (!block.classList.contains("selected-block")) return;
+
+      pointerId = e.pointerId;
+      startBlockX = e.clientX;
+      startBlockY = e.clientY;
+      dx = 0;
+      dy = 0;
+      dragStarted = false;
+    });
+
+    block.addEventListener("pointermove", (e) => {
+      if (pointerId !== e.pointerId) return;
+      if (!block.classList.contains("selected-block")) return;
+
+      dx = e.clientX - startBlockX;
+      dy = e.clientY - startBlockY;
+
+      if (!dragStarted && Math.hypot(dx, dy) > 8) {
+        dragStarted = true;
+        block.classList.add("dragging");
+      }
+
+      if (!dragStarted) return;
+
+      e.preventDefault();
+      block.style.transform = `translate(${dx}px, ${dy}px)`;
+      block.style.opacity = "0.85";
+    });
+
+    const endDrag = (e) => {
+      if (pointerId !== e.pointerId) return;
+
+      const distance = Math.hypot(dx, dy);
+      const eraseThreshold = 120;
+
+      if (dragStarted && distance > eraseThreshold) {
+        block.classList.remove("dragging");
+        block.classList.add("erasing");
+
+        setTimeout(() => {
+          block.remove();
+
+          const remainingBlocks = codeView.querySelectorAll(".code-block").length;
+          if (!remainingBlocks) {
+            codeView.innerHTML = "";
+            status.textContent = "All blocks erased";
+          } else {
+            status.textContent = "Block erased";
+          }
+        }, 180);
+      } else {
+        resetBlock();
+      }
+    };
+
+    block.addEventListener("pointerup", endDrag);
+    block.addEventListener("pointercancel", resetBlock);
   });
 }
 
@@ -371,7 +452,11 @@ function renderCodeContent(type, content) {
 
   codeView.innerHTML = blocks
     .map(
-      block => `<div class="code-block"><pre>${escapeHtml(block.trim())}</pre></div>`
+      (block, index) => `
+        <div class="code-block" data-block-index="${index}">
+          <pre>${escapeHtml(block.trim())}</pre>
+        </div>
+      `
     )
     .join("");
 
