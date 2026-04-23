@@ -1,11 +1,8 @@
-const labels = ["html", "css", "js", "svg"];
-const panels = [...document.querySelectorAll(".panel")];
-const pasteLayer = document.getElementById("pasteLayer");
+const pasteWrap = document.getElementById("pasteWrap");
+const pasteField = document.getElementById("pasteField");
 const scene = document.getElementById("scene");
-const canvas = document.getElementById("canvas");
+const stack = document.getElementById("stack");
 const status = document.getElementById("status");
-
-let selectedType = "html";
 
 const panelStore = {
   html: "",
@@ -13,6 +10,9 @@ const panelStore = {
   js: "",
   svg: ""
 };
+
+let activeTypes = [];
+let selectedType = null;
 
 let rotation = 0;
 let velocity = 0;
@@ -25,28 +25,161 @@ let lastTime = 0;
 let moved = false;
 let dragJustHappened = false;
 
-function getTypeFromLabel(type) {
+function prettyLabel(type) {
   return type.toUpperCase();
 }
 
-function wrapStep(value) {
-  return ((value % 4) + 4) % 4;
+function cleanBlock(text) {
+  return text.trim();
+}
+
+function extractMatches(text, regex, groupIndex = 1) {
+  const results = [];
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    results.push(groupIndex === 0 ? match[0] : match[groupIndex]);
+  }
+
+  return results;
+}
+
+function splitMixedCode(text) {
+  const result = { html: "", css: "", js: "", svg: "" };
+
+  const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
+
+  const styles = extractMatches(text, new RegExp(styleRegex), 1).map(cleanBlock).filter(Boolean);
+  const scripts = extractMatches(text, new RegExp(scriptRegex), 1).map(cleanBlock).filter(Boolean);
+  const svgs = extractMatches(text, new RegExp(svgRegex), 0).map(cleanBlock).filter(Boolean);
+
+  if (styles.length) result.css = styles.join("\n\n");
+  if (scripts.length) result.js = scripts.join("\n\n");
+  if (svgs.length) result.svg = svgs.join("\n\n");
+
+  const htmlOnly = text
+    .replace(styleRegex, "")
+    .replace(scriptRegex, "")
+    .replace(svgRegex, "")
+    .trim();
+
+  if (htmlOnly) {
+    result.html = cleanBlock(htmlOnly);
+  }
+
+  return result;
+}
+
+function detectSingleCodeType(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  if (/<svg[\s>]/i.test(trimmed) || /<\/svg>/i.test(trimmed)) return "svg";
+  if (/@media/i.test(trimmed) || /[.#][\w-]+\s*\{/m.test(trimmed) || /[a-z-]+\s*:\s*[^;]+;/i.test(trimmed) || /@keyframes/i.test(trimmed)) return "css";
+  if (/\b(const|let|var|function|document\.|querySelector|addEventListener|setInterval|setTimeout|requestAnimationFrame)\b/.test(trimmed) || /=>/.test(trimmed)) return "js";
+  if (/<!DOCTYPE html>/i.test(trimmed) || /<html[\s>]/i.test(trimmed) || /<body[\s>]/i.test(trimmed) || /<div[\s>]/i.test(trimmed) || /<head[\s>]/i.test(trimmed)) return "html";
+
+  return "html";
+}
+
+function looksLikeMixedDocument(text) {
+  return /<style\b/i.test(text) || /<script\b/i.test(text) || /<svg\b/i.test(text);
+}
+
+function loadCode(text) {
+  if (!text.trim()) return;
+
+  panelStore.html = "";
+  panelStore.css = "";
+  panelStore.js = "";
+  panelStore.svg = "";
+
+  if (looksLikeMixedDocument(text)) {
+    const split = splitMixedCode(text);
+    Object.assign(panelStore, split);
+  } else {
+    const type = detectSingleCodeType(text);
+    if (type) panelStore[type] = text.trim();
+  }
+
+  activeTypes = ["html", "css", "js", "svg"].filter(type => panelStore[type].trim());
+
+  if (!activeTypes.length) {
+    status.textContent = "Nothing detected";
+    return;
+  }
+
+  selectedType = activeTypes[0];
+  rotation = 0;
+  velocity = 0;
+
+  buildPanels();
+  render();
+
+  pasteWrap.classList.add("hidden");
+  scene.classList.remove("hidden");
+
+  status.textContent = `Loaded ${activeTypes.map(t => t.toUpperCase()).join(" · ")}`;
+}
+
+function buildPanels() {
+  stack.innerHTML = "";
+
+  activeTypes.forEach((type) => {
+    const panel = document.createElement("div");
+    panel.className = "panel";
+    panel.dataset.type = type;
+
+    const label = document.createElement("div");
+    label.className = "panel-label";
+    label.textContent = prettyLabel(type);
+
+    panel.appendChild(label);
+
+    panel.addEventListener("click", (e) => {
+      if (dragJustHappened) return;
+      e.stopPropagation();
+      selectPanel(type);
+    });
+
+    panel.addEventListener("touchend", (e) => {
+      if (dragJustHappened) return;
+      e.preventDefault();
+      e.stopPropagation();
+      selectPanel(type);
+    });
+
+    stack.appendChild(panel);
+  });
+}
+
+function wrapIndex(value) {
+  const total = activeTypes.length;
+  return ((value % total) + total) % total;
 }
 
 function shortestStepDiff(from, to) {
-  let diff = wrapStep(to) - wrapStep(from);
-  if (diff > 2) diff -= 4;
-  if (diff < -2) diff += 4;
+  const total = activeTypes.length;
+  let diff = wrapIndex(to) - wrapIndex(from);
+
+  if (diff > total / 2) diff -= total;
+  if (diff < -total / 2) diff += total;
+
   return diff;
 }
 
 function getPanelVisual(stepOffset) {
   let x = stepOffset;
-  while (x > 2) x -= 4;
-  while (x < -2) x += 4;
+  const total = activeTypes.length;
+
+  while (x > total / 2) x -= total;
+  while (x < -total / 2) x += total;
 
   const abs = Math.abs(x);
-  const frontness = Math.max(0, 1 - Math.min(abs, 2) / 2);
+  const maxDepth = Math.max(1, total / 2);
+  const frontness = Math.max(0, 1 - Math.min(abs, maxDepth) / maxDepth);
 
   return {
     transform: `
@@ -65,9 +198,11 @@ function getPanelVisual(stepOffset) {
 }
 
 function render() {
+  const panels = [...document.querySelectorAll(".panel")];
+
   panels.forEach((panel) => {
     const type = panel.dataset.type;
-    const index = labels.indexOf(type);
+    const index = activeTypes.indexOf(type);
     const offset = shortestStepDiff(rotation, index);
     const visual = getPanelVisual(offset);
 
@@ -79,17 +214,13 @@ function render() {
     panel.style.boxShadow = visual.boxShadow;
 
     panel.classList.toggle("selected", type === selectedType);
-    panel.classList.toggle("has-content", !!panelStore[type].trim());
-    panel.querySelector(".panel-label").textContent = getTypeFromLabel(type);
   });
 }
 
 function selectPanel(type) {
   selectedType = type;
   render();
-  status.textContent = panelStore[type].trim()
-    ? `${type.toUpperCase()} selected · content stored`
-    : `${type.toUpperCase()} selected · empty`;
+  status.textContent = `${type.toUpperCase()} selected · content stored`;
 }
 
 function snapToNearest() {
@@ -105,6 +236,10 @@ function snapToNearest() {
       render();
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
+
+      const index = wrapIndex(Math.round(rotation));
+      selectedType = activeTypes[index];
+      render();
       return;
     }
 
@@ -139,12 +274,15 @@ function startMomentum() {
 }
 
 function onStart(x) {
+  if (!activeTypes.length) return;
+
   isDragging = true;
   moved = false;
   startX = x;
   lastX = x;
   lastTime = performance.now();
   velocity = 0;
+
   cancelAnimationFrame(animationFrame);
   animationFrame = null;
 }
@@ -181,127 +319,22 @@ function onEnd() {
   startMomentum();
 }
 
-function cleanBlock(text) {
-  return text.trim();
-}
+pasteField.addEventListener("paste", (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text");
+  pasteField.value = "";
+  loadCode(text);
+});
 
-function extractMatches(text, regex, groupIndex = 1) {
-  const results = [];
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    results.push(groupIndex === 0 ? match[0] : match[groupIndex]);
-  }
-  return results;
-}
-
-function splitMixedCode(text) {
-  const result = { html: "", css: "", js: "", svg: "" };
-
-  const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
-  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
-  const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
-
-  const styles = extractMatches(text, new RegExp(styleRegex), 1).map(cleanBlock).filter(Boolean);
-  const scripts = extractMatches(text, new RegExp(scriptRegex), 1).map(cleanBlock).filter(Boolean);
-  const svgs = extractMatches(text, new RegExp(svgRegex), 0).map(cleanBlock).filter(Boolean);
-
-  if (styles.length) result.css = styles.join("\n\n");
-  if (scripts.length) result.js = scripts.join("\n\n");
-  if (svgs.length) result.svg = svgs.join("\n\n");
-
-  const htmlOnly = text
-    .replace(styleRegex, "")
-    .replace(scriptRegex, "")
-    .replace(svgRegex, "")
-    .trim();
-
-  if (htmlOnly) result.html = cleanBlock(htmlOnly);
-
-  return result;
-}
-
-function detectSingleCodeType(text) {
-  const trimmed = text.trim();
-  if (!trimmed) return null;
-
-  if (/<svg[\s>]/i.test(trimmed) || /<\/svg>/i.test(trimmed)) return "svg";
-  if (/@media/i.test(trimmed) || /[.#][\w-]+\s*\{/m.test(trimmed) || /[a-z-]+\s*:\s*[^;]+;/i.test(trimmed) || /@keyframes/i.test(trimmed)) return "css";
-  if (/\b(const|let|var|function|document\.|querySelector|addEventListener|setInterval|setTimeout|requestAnimationFrame)\b/.test(trimmed) || /=>/.test(trimmed)) return "js";
-  if (/<!DOCTYPE html>/i.test(trimmed) || /<html[\s>]/i.test(trimmed) || /<body[\s>]/i.test(trimmed) || /<div[\s>]/i.test(trimmed) || /<head[\s>]/i.test(trimmed)) return "html";
-
-  return selectedType || "html";
-}
-
-function looksLikeMixedDocument(text) {
-  return /<style\b/i.test(text) || /<script\b/i.test(text) || /<svg\b/i.test(text);
-}
-
-function clearPasteLayer() {
-  pasteLayer.textContent = "";
-}
-
-function applyPaste(text) {
-  if (!text.trim()) return;
-
-  if (looksLikeMixedDocument(text)) {
-    const split = splitMixedCode(text);
-    const updated = [];
-
-    for (const key of labels) {
-      if (split[key]) {
-        panelStore[key] = split[key];
-        updated.push(key.toUpperCase());
-      }
-    }
-
-    const firstFilled = labels.find((key) => split[key]);
-    if (firstFilled) selectedType = firstFilled;
-
-    render();
-    status.textContent = updated.length
-      ? `Separated into ${updated.join(" · ")}`
-      : "Nothing separated";
-
-    clearPasteLayer();
+pasteField.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
     return;
   }
 
-  const type = detectSingleCodeType(text);
-  if (!type) return;
-
-  panelStore[type] = text.trim();
-  selectedType = type;
-
-  render();
-  status.textContent = `Saved into ${type.toUpperCase()}`;
-  clearPasteLayer();
-}
-
-pasteLayer.addEventListener("paste", (e) => {
-  e.preventDefault();
-  const text = (e.clipboardData || window.clipboardData).getData("text");
-  applyPaste(text);
-});
-
-canvas.addEventListener("click", (e) => {
-  const clickedPanel = e.target.closest(".panel");
-  if (clickedPanel) return;
-  pasteLayer.focus();
-});
-
-panels.forEach((panel) => {
-  panel.addEventListener("click", (e) => {
-    if (dragJustHappened) return;
-    e.stopPropagation();
-    selectPanel(panel.dataset.type);
-  });
-
-  panel.addEventListener("touchend", (e) => {
-    if (dragJustHappened) return;
+  if (e.key === "Enter" && pasteField.value.trim()) {
     e.preventDefault();
-    e.stopPropagation();
-    selectPanel(panel.dataset.type);
-  });
+    loadCode(pasteField.value);
+  }
 });
 
 scene.addEventListener("touchstart", (e) => {
@@ -325,5 +358,3 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", onEnd);
-
-render();
