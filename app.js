@@ -409,8 +409,6 @@ function enableCodeBlockSelection() {
     block.addEventListener("click", toggleSelection);
 
     block.addEventListener("pointerdown", (e) => {
-      if (!block.classList.contains("selected-block")) return;
-
       pointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
@@ -423,41 +421,47 @@ function enableCodeBlockSelection() {
 
     block.addEventListener("pointermove", (e) => {
       if (pointerId !== e.pointerId) return;
-      if (!block.classList.contains("selected-block")) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
 
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const isSelected = block.classList.contains("selected-block");
+
       if (!dragStarted && !swipeMode) {
-        const absX = Math.abs(dx);
-        const absY = Math.abs(dy);
+        if (!isSelected) {
+          if (absX > 18 && absX > absY * 1.2) {
+            swipeMode = true;
+          }
+        } else {
+          if (Math.hypot(dx, dy) > 8) {
+            dragStarted = true;
+            dragGroup = getGroupedSelectedBlocks(block);
 
-        if (absX > 18 && absX > absY * 1.2) {
-          swipeMode = true;
-        } else if (Math.hypot(dx, dy) > 8) {
-          dragStarted = true;
-          dragGroup = getGroupedSelectedBlocks(block);
-
-          dragGroup.forEach((groupBlock) => {
-            groupBlock.classList.add("dragging");
-          });
+            dragGroup.forEach((groupBlock) => {
+              groupBlock.classList.add("dragging");
+            });
+          }
         }
       }
 
-      if (!dragStarted) return;
+      if (dragStarted) {
+        e.preventDefault();
 
-      e.preventDefault();
-
-      dragGroup.forEach((groupBlock) => {
-        groupBlock.style.transform = `translate(${dx}px, ${dy}px)`;
-        groupBlock.style.opacity = "0.85";
-      });
+        dragGroup.forEach((groupBlock) => {
+          groupBlock.style.transform = `translate(${dx}px, ${dy}px)`;
+          groupBlock.style.opacity = "0.85";
+        });
+      }
     });
 
     const endPointer = (e) => {
       if (pointerId !== e.pointerId) return;
 
-      if (swipeMode) {
+      const isSelected = block.classList.contains("selected-block");
+
+      if (swipeMode && !isSelected) {
         if (Math.abs(dx) > 24) {
           const direction = dx > 0 ? 1 : -1;
           cycleBlockColor(block, direction);
@@ -466,7 +470,7 @@ function enableCodeBlockSelection() {
         return;
       }
 
-      if (dragStarted) {
+      if (dragStarted && isSelected) {
         const distance = Math.hypot(dx, dy);
         const eraseThreshold = 120;
 
