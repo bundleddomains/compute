@@ -330,6 +330,26 @@ function splitSvgIntoBlocks(svgText) {
   return blocks;
 }
 
+function enableCodeBlockSelection() {
+  const blocks = [...codeView.querySelectorAll(".code-block")];
+
+  blocks.forEach((block) => {
+    const toggleSelection = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      block.classList.toggle("selected-block");
+
+      const selectedCount = codeView.querySelectorAll(".code-block.selected-block").length;
+      status.textContent = selectedCount
+        ? `${selectedCount} block${selectedCount === 1 ? "" : "s"} selected`
+        : "No blocks selected";
+    };
+
+    block.addEventListener("click", toggleSelection);
+    block.addEventListener("touchend", toggleSelection, { passive: false });
+  });
+}
+
 function renderCodeContent(type, content) {
   codeView.classList.add("block-mode");
 
@@ -350,8 +370,12 @@ function renderCodeContent(type, content) {
   }
 
   codeView.innerHTML = blocks
-    .map(block => `<div class="code-block"><pre>${escapeHtml(block.trim())}</pre></div>`)
+    .map(
+      block => `<div class="code-block"><pre>${escapeHtml(block.trim())}</pre></div>`
+    )
     .join("");
+
+  enableCodeBlockSelection();
 }
 
 function openPanelCode(type) {
