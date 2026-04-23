@@ -261,21 +261,97 @@ function splitCssIntoBlocks(cssText) {
   return blocks;
 }
 
-function renderCodeContent(type, content) {
-  if (type === "css") {
-    const blocks = splitCssIntoBlocks(content);
+function splitHtmlIntoBlocks(htmlText) {
+  const blocks = [];
+  const regex = /<([a-zA-Z][\w:-]*)\b[^>]*>[\s\S]*?<\/\1>|<[^>]+\/>/g;
+  let match;
 
-    if (blocks.length) {
-      codeView.classList.add("block-mode");
-      codeView.innerHTML = blocks
-        .map(block => `<div class="code-block"><pre>${escapeHtml(block)}</pre></div>`)
-        .join("");
-      return;
+  while ((match = regex.exec(htmlText)) !== null) {
+    const cleaned = match[0].trim();
+    if (cleaned) blocks.push(cleaned);
+  }
+
+  if (!blocks.length && htmlText.trim()) {
+    blocks.push(htmlText.trim());
+  }
+
+  return blocks;
+}
+
+function splitJsIntoBlocks(jsText) {
+  const blocks = [];
+  const lines = jsText.split("\n");
+  let current = [];
+  let depth = 0;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    if (!trimmedLine && depth === 0 && current.length) {
+      const cleaned = current.join("\n").trim();
+      if (cleaned) blocks.push(cleaned);
+      current = [];
+      continue;
+    }
+
+    current.push(line);
+
+    const opens = (line.match(/\{/g) || []).length;
+    const closes = (line.match(/\}/g) || []).length;
+    depth += opens - closes;
+
+    if (depth === 0 && current.length) {
+      const cleaned = current.join("\n").trim();
+      if (cleaned) blocks.push(cleaned);
+      current = [];
     }
   }
 
-  codeView.classList.remove("block-mode");
-  codeView.textContent = content;
+  const leftover = current.join("\n").trim();
+  if (leftover) blocks.push(leftover);
+
+  return blocks.length ? blocks : [jsText.trim()];
+}
+
+function splitSvgIntoBlocks(svgText) {
+  const blocks = [];
+  const regex = /<([a-zA-Z][\w:-]*)\b[^>]*>[\s\S]*?<\/\1>|<[^>]+\/>/g;
+  let match;
+
+  while ((match = regex.exec(svgText)) !== null) {
+    const cleaned = match[0].trim();
+    if (cleaned) blocks.push(cleaned);
+  }
+
+  if (!blocks.length && svgText.trim()) {
+    blocks.push(svgText.trim());
+  }
+
+  return blocks;
+}
+
+function renderCodeContent(type, content) {
+  codeView.classList.add("block-mode");
+
+  let blocks = [];
+
+  if (type === "css") {
+    blocks = splitCssIntoBlocks(content);
+  } else if (type === "html") {
+    blocks = splitHtmlIntoBlocks(content);
+  } else if (type === "js") {
+    blocks = splitJsIntoBlocks(content);
+  } else if (type === "svg") {
+    blocks = splitSvgIntoBlocks(content);
+  }
+
+  if (!blocks.length) {
+    blocks = [content];
+  }
+
+  codeView.innerHTML = blocks
+    .map(block => `<div class="code-block"><pre>${escapeHtml(block.trim())}</pre></div>`)
+    .join("");
 }
 
 function openPanelCode(type) {
