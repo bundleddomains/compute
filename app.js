@@ -228,10 +228,63 @@ function render() {
   });
 }
 
+function escapeHtml(text) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function splitCssIntoBlocks(cssText) {
+  const blocks = [];
+  let current = "";
+  let depth = 0;
+
+  for (const char of cssText) {
+    current += char;
+
+    if (char === "{") depth += 1;
+    if (char === "}") {
+      depth -= 1;
+
+      if (depth === 0) {
+        const cleaned = current.trim();
+        if (cleaned) blocks.push(cleaned);
+        current = "";
+      }
+    }
+  }
+
+  const leftover = current.trim();
+  if (leftover) blocks.push(leftover);
+
+  return blocks;
+}
+
+function renderCodeContent(type, content) {
+  if (type === "css") {
+    const blocks = splitCssIntoBlocks(content);
+
+    if (blocks.length) {
+      codeView.classList.add("block-mode");
+      codeView.innerHTML = blocks
+        .map(block => `<div class="code-block"><pre>${escapeHtml(block)}</pre></div>`)
+        .join("");
+      return;
+    }
+  }
+
+  codeView.classList.remove("block-mode");
+  codeView.textContent = content;
+}
+
 function openPanelCode(type) {
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
-  codeView.textContent = panelStore[type] || `${prettyLabel(type)} is empty.`;
+
+  const content = panelStore[type] || `${prettyLabel(type)} is empty.`;
+  renderCodeContent(type, content);
+
   status.textContent = `${prettyLabel(type)} opened`;
 }
 
