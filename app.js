@@ -1,11 +1,9 @@
 const pasteWrap = document.getElementById("pasteWrap");
 const pasteField = document.getElementById("pasteField");
-const workspace = document.getElementById("workspace");
 const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const status = document.getElementById("status");
-const viewerTitle = document.getElementById("viewerTitle");
-const codeViewer = document.getElementById("codeViewer");
+const codeView = document.getElementById("codeView");
 
 const panelStore = {
   html: "",
@@ -122,10 +120,9 @@ function loadCode(text) {
   render();
 
   pasteWrap.classList.add("hidden");
-  workspace.classList.remove("hidden");
+  codeView.classList.add("hidden");
+  scene.classList.remove("hidden");
 
-  viewerTitle.textContent = "CODE VIEWER";
-  codeViewer.textContent = "Tap the front panel to view its saved code.";
   status.textContent = `Loaded ${activeTypes.map(t => t.toUpperCase()).join(" · ")}`;
 }
 
@@ -241,8 +238,9 @@ function render() {
 }
 
 function openPanelCode(type) {
-  viewerTitle.textContent = `${prettyLabel(type)} CODE`;
-  codeViewer.textContent = panelStore[type] || `${prettyLabel(type)} is empty.`;
+  scene.classList.add("hidden");
+  codeView.classList.remove("hidden");
+  codeView.textContent = panelStore[type] || `${prettyLabel(type)} is empty.`;
   status.textContent = `${prettyLabel(type)} opened`;
 }
 
