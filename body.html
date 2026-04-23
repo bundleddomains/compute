@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colored Pencil Body</title>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f3efe8;
+    overflow: hidden;
+  }
+
+  .pencil {
+    position: relative;
+    width: 300px;
+    height: 34px;
+
+    /* ← only change here */
+    border-radius: 0 999px 999px 0;
+
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.55) 0%,
+        rgba(255,255,255,0.18) 18%,
+        rgba(0,0,0,0.05) 52%,
+        rgba(0,0,0,0.14) 100%
+      ),
+      linear-gradient(
+        to right,
+        #7f5aa8 0%,
+        #8d68b5 18%,
+        #9c77c2 52%,
+        #7b56a4 100%
+      );
+
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,0.45),
+      inset 0 -2px 4px rgba(0,0,0,0.12),
+      0 8px 18px rgba(0,0,0,0.12);
+
+    transform: rotate(-8deg);
+  }
+
+  .pencil::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 6px;
+    height: 5px;
+
+    /* match shape direction */
+    border-radius: 0 999px 999px 0;
+
+    background: rgba(255,255,255,0.28);
+    filter: blur(0.2px);
+  }
+
+  .pencil::after {
+    content: "";
+    position: absolute;
+    left: 28px;
+    right: 28px;
+    bottom: 5px;
+    height: 4px;
+
+    /* match shape direction */
+    border-radius: 0 999px 999px 0;
+
+    background: rgba(0,0,0,0.08);
+    filter: blur(0.4px);
+  }
+</style>
+</head>
+
+<body>
+  <div class="pencil"></div>
+</body>
+</html>
