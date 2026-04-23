@@ -18,29 +18,46 @@ body {
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  outline: none;
 }
 
-/* hidden but focusable paste target */
-.paste-layer {
+.paste-wrap {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 4;
+}
+
+.paste-title {
+  font-size: 14px;
+  color: rgba(40,40,40,0.58);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.paste-field {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: 1px solid rgba(120,120,120,0.14);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.58);
+  padding: 18px;
+  box-sizing: border-box;
   outline: none;
-  color: transparent;
-  background: transparent;
-  caret-color: transparent;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: hidden;
-  -webkit-user-select: text;
-  user-select: text;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #333;
 }
 
 .scene {
   position: absolute;
   left: 50%;
-  top: 58%;
+  top: 54%;
   transform: translate(-50%, -50%);
   width: 320px;
   height: 250px;
@@ -50,6 +67,10 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 3;
+}
+
+.hidden {
+  display: none;
 }
 
 .stack {
@@ -91,12 +112,6 @@ body {
 .panel-label {
   pointer-events: none;
   letter-spacing: 0.06em;
-}
-
-.panel.has-content .panel-label {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
 }
 
 .selected {
