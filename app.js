@@ -1,0 +1,329 @@
+const labels = ["html", "css", "js", "svg"];
+const panels = [...document.querySelectorAll(".panel")];
+const pasteLayer = document.getElementById("pasteLayer");
+const scene = document.getElementById("scene");
+const canvas = document.getElementById("canvas");
+const status = document.getElementById("status");
+
+let selectedType = "html";
+
+const panelStore = {
+  html: "",
+  css: "",
+  js: "",
+  svg: ""
+};
+
+let rotation = 0;
+let velocity = 0;
+let isDragging = false;
+let animationFrame = null;
+
+let startX = 0;
+let lastX = 0;
+let lastTime = 0;
+let moved = false;
+let dragJustHappened = false;
+
+function getTypeFromLabel(type) {
+  return type.toUpperCase();
+}
+
+function wrapStep(value) {
+  return ((value % 4) + 4) % 4;
+}
+
+function shortestStepDiff(from, to) {
+  let diff = wrapStep(to) - wrapStep(from);
+  if (diff > 2) diff -= 4;
+  if (diff < -2) diff += 4;
+  return diff;
+}
+
+function getPanelVisual(stepOffset) {
+  let x = stepOffset;
+  while (x > 2) x -= 4;
+  while (x < -2) x += 4;
+
+  const abs = Math.abs(x);
+  const frontness = Math.max(0, 1 - Math.min(abs, 2) / 2);
+
+  return {
+    transform: `
+      translate(-50%, -50%)
+      translateX(${x * 88}px)
+      translateZ(${72 - abs * 54}px)
+      rotateY(${-x * 16}deg)
+      scale(${1 - abs * 0.08})
+    `,
+    opacity: Math.max(0.18, 1 - abs * 0.38),
+    filter: `blur(${Math.min(0.5, abs * 0.25)}px)`,
+    zIndex: Math.round((frontness * 100) + (2 - abs) * 10),
+    background: `rgba(255,255,255,${0.18 + frontness * 0.4})`,
+    boxShadow: `0 ${6 + frontness * 8}px ${14 + frontness * 16}px rgba(0,0,0,${0.04 + frontness * 0.06})`
+  };
+}
+
+function render() {
+  panels.forEach((panel) => {
+    const type = panel.dataset.type;
+    const index = labels.indexOf(type);
+    const offset = shortestStepDiff(rotation, index);
+    const visual = getPanelVisual(offset);
+
+    panel.style.transform = visual.transform;
+    panel.style.opacity = visual.opacity;
+    panel.style.filter = visual.filter;
+    panel.style.zIndex = visual.zIndex;
+    panel.style.background = visual.background;
+    panel.style.boxShadow = visual.boxShadow;
+
+    panel.classList.toggle("selected", type === selectedType);
+    panel.classList.toggle("has-content", !!panelStore[type].trim());
+    panel.querySelector(".panel-label").textContent = getTypeFromLabel(type);
+  });
+}
+
+function selectPanel(type) {
+  selectedType = type;
+  render();
+  status.textContent = panelStore[type].trim()
+    ? `${type.toUpperCase()} selected · content stored`
+    : `${type.toUpperCase()} selected · empty`;
+}
+
+function snapToNearest() {
+  const target = Math.round(rotation);
+
+  const animate = () => {
+    const diff = target - rotation;
+    rotation += diff * 0.16;
+
+    if (Math.abs(diff) < 0.002) {
+      rotation = target;
+      velocity = 0;
+      render();
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      return;
+    }
+
+    render();
+    animationFrame = requestAnimationFrame(animate);
+  };
+
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function startMomentum() {
+  const animate = () => {
+    if (isDragging) return;
+
+    rotation += velocity;
+    velocity *= 0.94;
+
+    if (Math.abs(velocity) < 0.003) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      snapToNearest();
+      return;
+    }
+
+    render();
+    animationFrame = requestAnimationFrame(animate);
+  };
+
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function onStart(x) {
+  isDragging = true;
+  moved = false;
+  startX = x;
+  lastX = x;
+  lastTime = performance.now();
+  velocity = 0;
+  cancelAnimationFrame(animationFrame);
+  animationFrame = null;
+}
+
+function onMove(x) {
+  if (!isDragging) return;
+
+  const now = performance.now();
+  const dx = x - lastX;
+  const dt = Math.max(1, now - lastTime);
+
+  if (Math.abs(x - startX) > 4) moved = true;
+
+  rotation -= dx / 90;
+  velocity = -(dx / dt) * 0.18;
+
+  lastX = x;
+  lastTime = now;
+
+  render();
+}
+
+function onEnd() {
+  if (!isDragging) return;
+  isDragging = false;
+
+  if (moved) {
+    dragJustHappened = true;
+    setTimeout(() => {
+      dragJustHappened = false;
+    }, 120);
+  }
+
+  startMomentum();
+}
+
+function cleanBlock(text) {
+  return text.trim();
+}
+
+function extractMatches(text, regex, groupIndex = 1) {
+  const results = [];
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    results.push(groupIndex === 0 ? match[0] : match[groupIndex]);
+  }
+  return results;
+}
+
+function splitMixedCode(text) {
+  const result = { html: "", css: "", js: "", svg: "" };
+
+  const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
+
+  const styles = extractMatches(text, new RegExp(styleRegex), 1).map(cleanBlock).filter(Boolean);
+  const scripts = extractMatches(text, new RegExp(scriptRegex), 1).map(cleanBlock).filter(Boolean);
+  const svgs = extractMatches(text, new RegExp(svgRegex), 0).map(cleanBlock).filter(Boolean);
+
+  if (styles.length) result.css = styles.join("\n\n");
+  if (scripts.length) result.js = scripts.join("\n\n");
+  if (svgs.length) result.svg = svgs.join("\n\n");
+
+  const htmlOnly = text
+    .replace(styleRegex, "")
+    .replace(scriptRegex, "")
+    .replace(svgRegex, "")
+    .trim();
+
+  if (htmlOnly) result.html = cleanBlock(htmlOnly);
+
+  return result;
+}
+
+function detectSingleCodeType(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  if (/<svg[\s>]/i.test(trimmed) || /<\/svg>/i.test(trimmed)) return "svg";
+  if (/@media/i.test(trimmed) || /[.#][\w-]+\s*\{/m.test(trimmed) || /[a-z-]+\s*:\s*[^;]+;/i.test(trimmed) || /@keyframes/i.test(trimmed)) return "css";
+  if (/\b(const|let|var|function|document\.|querySelector|addEventListener|setInterval|setTimeout|requestAnimationFrame)\b/.test(trimmed) || /=>/.test(trimmed)) return "js";
+  if (/<!DOCTYPE html>/i.test(trimmed) || /<html[\s>]/i.test(trimmed) || /<body[\s>]/i.test(trimmed) || /<div[\s>]/i.test(trimmed) || /<head[\s>]/i.test(trimmed)) return "html";
+
+  return selectedType || "html";
+}
+
+function looksLikeMixedDocument(text) {
+  return /<style\b/i.test(text) || /<script\b/i.test(text) || /<svg\b/i.test(text);
+}
+
+function clearPasteLayer() {
+  pasteLayer.textContent = "";
+}
+
+function applyPaste(text) {
+  if (!text.trim()) return;
+
+  if (looksLikeMixedDocument(text)) {
+    const split = splitMixedCode(text);
+    const updated = [];
+
+    for (const key of labels) {
+      if (split[key]) {
+        panelStore[key] = split[key];
+        updated.push(key.toUpperCase());
+      }
+    }
+
+    const firstFilled = labels.find((key) => split[key]);
+    if (firstFilled) selectedType = firstFilled;
+
+    render();
+    status.textContent = updated.length
+      ? `Separated into ${updated.join(" · ")}`
+      : "Nothing separated";
+
+    clearPasteLayer();
+    return;
+  }
+
+  const type = detectSingleCodeType(text);
+  if (!type) return;
+
+  panelStore[type] = text.trim();
+  selectedType = type;
+
+  render();
+  status.textContent = `Saved into ${type.toUpperCase()}`;
+  clearPasteLayer();
+}
+
+pasteLayer.addEventListener("paste", (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text");
+  applyPaste(text);
+});
+
+canvas.addEventListener("click", (e) => {
+  const clickedPanel = e.target.closest(".panel");
+  if (clickedPanel) return;
+  pasteLayer.focus();
+});
+
+panels.forEach((panel) => {
+  panel.addEventListener("click", (e) => {
+    if (dragJustHappened) return;
+    e.stopPropagation();
+    selectPanel(panel.dataset.type);
+  });
+
+  panel.addEventListener("touchend", (e) => {
+    if (dragJustHappened) return;
+    e.preventDefault();
+    e.stopPropagation();
+    selectPanel(panel.dataset.type);
+  });
+});
+
+scene.addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) return;
+  onStart(e.touches[0].clientX);
+}, { passive: true });
+
+scene.addEventListener("touchmove", (e) => {
+  if (e.touches.length !== 1) return;
+  onMove(e.touches[0].clientX);
+}, { passive: true });
+
+scene.addEventListener("touchend", onEnd);
+
+scene.addEventListener("mousedown", (e) => {
+  onStart(e.clientX);
+});
+
+window.addEventListener("mousemove", (e) => {
+  onMove(e.clientX);
+});
+
+window.addEventListener("mouseup", onEnd);
+
+render();
