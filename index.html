@@ -9,6 +9,12 @@
   <style>
     .paste-wrap {
       padding-bottom: 18px;
+      overflow: auto;
+    }
+
+    .paste-field {
+      flex: 0 0 auto;
+      height: 180px;
     }
 
     .module-preview-wrap {
@@ -47,6 +53,10 @@
     }
 
     @media (max-width: 700px) {
+      .paste-field {
+        height: 140px;
+      }
+
       .module-preview-wrap {
         flex-direction: column;
       }
