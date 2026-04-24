@@ -17,66 +17,17 @@
       height: 180px;
     }
 
-    .pencil-preview-layer {
-      position: relative;
-      width: 100%;
-      height: 220px;
-      margin-top: 14px;
-      overflow: visible;
-    }
-
-    .pencil-piece {
-      position: absolute;
-      border: 0;
-      display: block;
-      background: transparent;
-    }
-
-    /* body */
-    .pencil-body-frame {
-      width: 320px;
-      height: 80px;
-      left: 50%;
-      top: 78px;
-      transform: translateX(-10px);
-    }
-
-    /* tip */
-    .pencil-tip-frame {
-      width: 150px;
-      height: 80px;
-      left: calc(50% - 146px);
-      top: 63px;
-    }
-
     @media (max-width: 700px) {
       .paste-field {
         height: 140px;
       }
-
-      .pencil-preview-layer {
-        height: 180px;
-      }
-
-      .pencil-body-frame {
-        width: 260px;
-        height: 70px;
-        left: 50%;
-        top: 64px;
-        transform: translateX(-8px);
-      }
-
-      .pencil-tip-frame {
-        width: 120px;
-        height: 64px;
-        left: calc(50% - 118px);
-        top: 52px;
-      }
     }
   </style>
 </head>
+
 <body>
   <div id="canvas" class="canvas">
+    
     <div id="pasteWrap" class="paste-wrap">
       <div class="paste-title">Paste Code</div>
 
@@ -86,22 +37,6 @@
         spellcheck="false"
         placeholder="Paste HTML, CSS, JS, SVG, or a mixed document..."
       ></textarea>
-
-      <div class="pencil-preview-layer">
-        <iframe
-          class="pencil-piece pencil-body-frame"
-          src="body.html"
-          title="Pencil body preview"
-          loading="lazy"
-        ></iframe>
-
-        <iframe
-          class="pencil-piece pencil-tip-frame"
-          src="tip.html"
-          title="Pencil tip preview"
-          loading="lazy"
-        ></iframe>
-      </div>
     </div>
 
     <pre id="codeView" class="code-view hidden"></pre>
