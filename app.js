@@ -4,25 +4,21 @@ const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
 
 const panelStore = {
-  paste1: "",
-  paste2: "",
   html: "",
   css: "",
   js: "",
   svg: ""
 };
 
-let activeTypes = ["paste1", "paste2"];
-let activeFrontType = "paste1";
-
+let activeTypes = ["replace", "erase"];
 let rotation = 0;
 let isDragging = false;
 let startX = 0;
 let lastX = 0;
 
 function prettyLabel(type) {
-  if (type === "paste1") return "REPLACE";
-  if (type === "paste2") return "ERASE";
+  if (type === "replace") return "REPLACE";
+  if (type === "erase") return "ERASE";
   return type.toUpperCase();
 }
 
@@ -92,6 +88,15 @@ function loadCode(text) {
   status.textContent = "Loaded";
 }
 
+async function loadFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    loadCode(text);
+  } catch {
+    status.textContent = "Clipboard blocked";
+  }
+}
+
 function buildPanels() {
   stack.innerHTML = "";
 
@@ -100,39 +105,32 @@ function buildPanels() {
     panel.className = "panel";
     panel.dataset.type = type;
 
-    if (type.startsWith("paste")) {
-      const textarea = document.createElement("textarea");
-      textarea.className = "paste-panel-input";
-      textarea.placeholder = prettyLabel(type);
+    const label = document.createElement("div");
+    label.className = "panel-label";
+    label.textContent = prettyLabel(type);
+    panel.appendChild(label);
 
-      textarea.addEventListener("paste", (e) => {
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData("text");
-        loadCode(text);
-      });
-
-      panel.appendChild(textarea);
+    if (type === "replace" || type === "erase") {
+      panel.addEventListener("click", loadFromClipboard);
 
       panel.style.position = "absolute";
       panel.style.top = "50%";
-      panel.style.left = i === 0 ? "38%" : "62%";
+      panel.style.left = i === 0 ? "41%" : "59%";
       panel.style.transform = "translate(-50%, -50%)";
-      panel.style.width = "160px";
-      panel.style.height = "160px";
+      panel.style.width = "112px";
+      panel.style.height = "112px";
       panel.style.border = "2px solid black";
-      panel.style.borderRadius = "18px";
-      panel.style.display = "grid";
-      panel.style.placeItems = "center";
+      panel.style.borderRadius = "14px";
+      panel.style.display = "flex";
+      panel.style.alignItems = "center";
+      panel.style.justifyContent = "center";
       panel.style.background = "white";
       panel.style.color = "black";
       panel.style.boxSizing = "border-box";
-      panel.style.overflow = "hidden";
+      panel.style.fontWeight = "700";
+      panel.style.letterSpacing = "0.06em";
+      panel.style.cursor = "pointer";
     } else {
-      const label = document.createElement("div");
-      label.className = "panel-label";
-      label.textContent = prettyLabel(type);
-      panel.appendChild(label);
-
       panel.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -180,7 +178,7 @@ function getPanelVisual(stepOffset) {
 }
 
 function render() {
-  if (activeTypes[0].startsWith("paste")) return;
+  if (activeTypes[0] === "replace" || activeTypes[0] === "erase") return;
 
   const panels = [...document.querySelectorAll(".panel")];
 
@@ -217,7 +215,7 @@ function openPanelCode(type) {
 }
 
 function onStart(x) {
-  if (activeTypes[0].startsWith("paste")) return;
+  if (activeTypes[0] === "replace" || activeTypes[0] === "erase") return;
   isDragging = true;
   startX = x;
   lastX = x;
