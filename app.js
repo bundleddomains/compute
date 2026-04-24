@@ -16,17 +16,13 @@ let activeTypes = ["paste1", "paste2"];
 let activeFrontType = "paste1";
 
 let rotation = 0;
-let velocity = 0;
 let isDragging = false;
-let animationFrame = null;
 let startX = 0;
 let lastX = 0;
-let lastTime = 0;
-let moved = false;
-let dragJustHappened = false;
 
 function prettyLabel(type) {
-  if (type.startsWith("paste")) return "";
+  if (type === "paste1") return "REPLACE";
+  if (type === "paste2") return "ERASE";
   return type.toUpperCase();
 }
 
@@ -87,13 +83,9 @@ function loadCode(text) {
     panelStore.html = text.trim();
   }
 
-  // 🔥 AFTER paste → switch to rotating system
   activeTypes = ["html", "css", "js", "svg"].filter(type => panelStore[type].trim());
 
   rotation = 0;
-  velocity = 0;
-  activeFrontType = activeTypes[0];
-
   buildPanels();
   render();
 
@@ -111,7 +103,7 @@ function buildPanels() {
     if (type.startsWith("paste")) {
       const textarea = document.createElement("textarea");
       textarea.className = "paste-panel-input";
-      textarea.placeholder = "paste";
+      textarea.placeholder = prettyLabel(type);
 
       textarea.addEventListener("paste", (e) => {
         e.preventDefault();
@@ -121,7 +113,7 @@ function buildPanels() {
 
       panel.appendChild(textarea);
 
-      // 🔥 SIDE BY SIDE positioning
+      // 🔥 side by side layout
       panel.style.position = "absolute";
       panel.style.top = "50%";
       panel.style.left = i === 0 ? "35%" : "65%";
@@ -139,13 +131,10 @@ function buildPanels() {
       panel.appendChild(label);
 
       panel.addEventListener("click", (e) => {
-        if (dragJustHappened) return;
         e.preventDefault();
         e.stopPropagation();
         openPanelCode(type);
       });
-
-      stack.appendChild(panel);
     }
 
     stack.appendChild(panel);
@@ -167,14 +156,6 @@ function shortestStepDiff(from, to) {
   return diff;
 }
 
-function getFrontIndex() {
-  return wrapIndex(Math.round(rotation));
-}
-
-function updateActiveFrontType() {
-  activeFrontType = activeTypes[getFrontIndex()];
-}
-
 function getPanelVisual(stepOffset) {
   let x = stepOffset;
   const total = activeTypes.length;
@@ -187,7 +168,7 @@ function getPanelVisual(stepOffset) {
   return {
     transform: `
       translate(-50%, -50%)
-      translateX(${x * 118}px)
+      translateX(${x * 120}px)
       rotateY(${-x * 16}deg)
     `,
     opacity: Math.max(0.2, 1 - abs * 0.3),
@@ -197,8 +178,6 @@ function getPanelVisual(stepOffset) {
 
 function render() {
   if (activeTypes[0].startsWith("paste")) return;
-
-  updateActiveFrontType();
 
   const panels = [...document.querySelectorAll(".panel")];
 
@@ -232,13 +211,11 @@ function openPanelCode(type) {
   status.textContent = `${prettyLabel(type)} opened`;
 }
 
-// drag only active after paste
 function onStart(x) {
   if (activeTypes[0].startsWith("paste")) return;
   isDragging = true;
   startX = x;
   lastX = x;
-  lastTime = performance.now();
 }
 
 function onMove(x) {
@@ -266,7 +243,7 @@ function startDefaultCanvas() {
   buildPanels();
   render();
 
-  status.textContent = "Paste to begin";
+  status.textContent = "REPLACE or ERASE";
 }
 
 if (document.readyState === "loading") {
