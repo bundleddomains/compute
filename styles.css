@@ -105,7 +105,7 @@ body {
   border-color: rgba(90, 154, 106, 0.26);
 }
 
-/* ---------- centered revolving state ---------- */
+/* ---------- centered state ---------- */
 
 .scene {
   position: absolute;
@@ -163,31 +163,62 @@ body {
     0 14px 30px rgba(0,0,0,0.10);
 }
 
-/* ---------- replace / erase start panels ---------- */
+/* ---------- start buttons ---------- */
 
-.paste-panel-input {
-  width: 100%;
-  height: 100%;
-  border: none;
-  outline: none;
-  resize: none;
+.start-button {
+  position: absolute;
+  top: 50%;
+  width: 112px;
+  height: 112px;
+  transform: translate(-50%, -50%);
+  border: 2px solid black;
+  border-radius: 14px;
   background: white;
   color: black;
-  text-align: center;
   font: inherit;
-  font-size: 18px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
   box-sizing: border-box;
-  display: block;
-  line-height: 160px;
-  overflow: hidden;
+  transition:
+    left 0.35s ease,
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
-.paste-panel-input::placeholder {
+.replace-button {
+  left: 30%;
+}
+
+.erase-button {
+  left: 70%;
+}
+
+.start-amp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 600;
   color: black;
-  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.file-mode,
+.snip-mode {
+  font-size: 13px;
+}
+
+.move-center {
+  left: 50%;
+}
+
+.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .status {
