@@ -171,12 +171,12 @@ function getPanelVisual(stepOffset) {
   return {
     transform: `
       translate(-50%, -50%)
-      translateX(${x * 88}px)
-      translateZ(${72 - abs * 54}px)
+      translateX(${x * 126}px)
+      translateZ(${80 - abs * 58}px)
       rotateY(${-x * 16}deg)
-      scale(${1 - abs * 0.08})
+      scale(${1 - abs * 0.06})
     `,
-    opacity: Math.max(0.18, 1 - abs * 0.38),
+    opacity: Math.max(0.18, 1 - abs * 0.34),
     filter: `blur(${Math.min(0.5, abs * 0.25)}px)`,
     zIndex: Math.round((frontness * 100) + (2 - abs) * 10),
     background: `rgba(255,255,255,${0.18 + frontness * 0.4})`,
@@ -195,26 +195,17 @@ function render() {
     const offset = shortestStepDiff(rotation, index);
     const visual = getPanelVisual(offset);
 
-    const isLeftSide = offset < -0.5;
-
     panel.style.position = "absolute";
     panel.style.left = "50%";
     panel.style.top = "50%";
+    panel.style.width = "110px";
+    panel.style.height = "360px";
     panel.style.border = "2px solid black";
+    panel.style.borderRadius = "44px";
     panel.style.display = "grid";
     panel.style.placeItems = "center";
     panel.style.color = "black";
-    panel.style.transition = "width 0.35s ease, height 0.35s ease, border-radius 0.35s ease";
-
-    if (isLeftSide) {
-      panel.style.width = "100px";
-      panel.style.height = "320px";
-      panel.style.borderRadius = "44px";
-    } else {
-      panel.style.width = "120px";
-      panel.style.height = "120px";
-      panel.style.borderRadius = "18px";
-    }
+    panel.style.transition = "transform 0.2s ease, opacity 0.2s ease";
 
     panel.style.transform = visual.transform;
     panel.style.opacity = visual.opacity;
@@ -360,11 +351,11 @@ window.addEventListener("mouseup", onEnd);
 function startDefaultCanvas() {
   scene.style.display = "block";
   scene.style.position = "relative";
-  scene.style.minHeight = "420px";
+  scene.style.minHeight = "500px";
 
   stack.style.position = "relative";
   stack.style.width = "100%";
-  stack.style.height = "420px";
+  stack.style.height = "500px";
 
   loadCode(DEFAULT_CODE);
 }
