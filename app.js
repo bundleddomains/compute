@@ -2,29 +2,18 @@ const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
-const rightPanel = document.getElementById("rightPanel");
 
-const DEFAULT_CODE = `
-<div class="for-u">For-u</div>
+const panelStore = {
+  blank: "",
+  html: "",
+  css: "",
+  js: "",
+  svg: ""
+};
 
-<style>
-.for-u {
-  width: 140px;
-  height: 140px;
-  display: grid;
-  place-items: center;
-  border: 2px solid black;
-  border-radius: 18px;
-  font-family: serif;
-  background: white;
-}
-</style>
-`;
+let activeTypes = ["blank"];
+let activeFrontType = "blank";
 
-const panelStore = { html: "", css: "", js: "", svg: "" };
-
-let activeTypes = [];
-let activeFrontType = null;
 let rotation = 0;
 let velocity = 0;
 let isDragging = false;
@@ -36,79 +25,8 @@ let moved = false;
 let dragJustHappened = false;
 
 function prettyLabel(type) {
+  if (type === "blank") return "";
   return type.toUpperCase();
-}
-
-function cleanBlock(text) {
-  return text.trim();
-}
-
-function extractMatches(text, regex, groupIndex = 1) {
-  const results = [];
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    results.push(groupIndex === 0 ? match[0] : match[groupIndex]);
-  }
-  return results;
-}
-
-function splitMixedCode(text) {
-  const result = { html: "", css: "", js: "", svg: "" };
-
-  const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
-  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
-  const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
-
-  const styles = extractMatches(text, new RegExp(styleRegex), 1).map(cleanBlock).filter(Boolean);
-  const scripts = extractMatches(text, new RegExp(scriptRegex), 1).map(cleanBlock).filter(Boolean);
-  const svgs = extractMatches(text, new RegExp(svgRegex), 0).map(cleanBlock).filter(Boolean);
-
-  if (styles.length) result.css = styles.join("\n\n");
-  if (scripts.length) result.js = scripts.join("\n\n");
-  if (svgs.length) result.svg = svgs.join("\n\n");
-
-  const htmlOnly = text
-    .replace(styleRegex, "")
-    .replace(scriptRegex, "")
-    .replace(svgRegex, "")
-    .trim();
-
-  if (htmlOnly) result.html = cleanBlock(htmlOnly);
-
-  return result;
-}
-
-function looksLikeMixedDocument(text) {
-  return /<style\b/i.test(text) || /<script\b/i.test(text) || /<svg\b/i.test(text);
-}
-
-function loadCode(text) {
-  panelStore.html = "";
-  panelStore.css = "";
-  panelStore.js = "";
-  panelStore.svg = "";
-
-  if (looksLikeMixedDocument(text)) {
-    Object.assign(panelStore, splitMixedCode(text));
-  } else {
-    panelStore.html = text.trim();
-  }
-
-  activeTypes = ["html", "css", "js", "svg"].filter(type => panelStore[type].trim());
-
-  rotation = 0;
-  velocity = 0;
-  activeFrontType = activeTypes[0];
-
-  buildPanels();
-  render();
-
-  scene.classList.remove("hidden");
-  codeView.classList.add("hidden");
-
-  if (rightPanel) rightPanel.classList.remove("hidden");
-
-  status.textContent = `${prettyLabel(activeFrontType)} ready`;
 }
 
 function buildPanels() {
@@ -126,7 +44,7 @@ function buildPanels() {
     panel.appendChild(label);
 
     panel.addEventListener("click", (e) => {
-      if (dragJustHappened) return;
+      if (dragJustHappened || type === "blank") return;
       e.preventDefault();
       e.stopPropagation();
       openPanelCode(type);
@@ -156,7 +74,6 @@ function getFrontIndex() {
 }
 
 function updateActiveFrontType() {
-  if (!activeTypes.length) return;
   activeFrontType = activeTypes[getFrontIndex()];
 }
 
@@ -174,15 +91,15 @@ function getPanelVisual(stepOffset) {
   return {
     transform: `
       translate(-50%, -50%)
-      translateX(${x * 86}px)
-      translateZ(${70 - abs * 52}px)
+      translateX(${x * 106}px)
+      translateZ(${76 - abs * 54}px)
       rotateY(${-x * 16}deg)
       scale(${1 - abs * 0.06})
     `,
     opacity: Math.max(0.18, 1 - abs * 0.34),
     filter: `blur(${Math.min(0.5, abs * 0.25)}px)`,
     zIndex: Math.round((frontness * 100) + (2 - abs) * 10),
-    background: `rgba(255,255,255,${0.18 + frontness * 0.4})`,
+    background: `rgba(255,255,255,${0.16 + frontness * 0.34})`,
     boxShadow: `0 ${6 + frontness * 8}px ${14 + frontness * 16}px rgba(0,0,0,${0.04 + frontness * 0.06})`
   };
 }
@@ -234,8 +151,6 @@ function openPanelCode(type) {
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
-  if (rightPanel) rightPanel.classList.add("hidden");
-
   codeView.innerHTML = `<pre>${escapeHtml(panelStore[type])}</pre>`;
   status.textContent = `${prettyLabel(type)} opened`;
 }
@@ -253,7 +168,7 @@ function snapToNearest() {
       render();
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
-      status.textContent = `${prettyLabel(activeFrontType)} ready`;
+      status.textContent = activeFrontType === "blank" ? "Ready" : `${prettyLabel(activeFrontType)} ready`;
       return;
     }
 
@@ -288,8 +203,6 @@ function startMomentum() {
 }
 
 function onStart(x) {
-  if (!activeTypes.length) return;
-
   isDragging = true;
   moved = false;
   startX = x;
@@ -358,20 +271,21 @@ window.addEventListener("mouseup", onEnd);
 function startDefaultCanvas() {
   scene.style.display = "flex";
   scene.style.position = "absolute";
-  scene.style.left = "0";
-  scene.style.top = "0";
-  scene.style.width = "50vw";
+  scene.style.inset = "0";
+  scene.style.width = "100vw";
   scene.style.height = "100vh";
 
   stack.style.position = "relative";
   stack.style.width = "100%";
   stack.style.height = "100%";
 
-  if (rightPanel) {
-    rightPanel.style.display = "block";
-  }
+  codeView.classList.add("hidden");
+  scene.classList.remove("hidden");
 
-  loadCode(DEFAULT_CODE);
+  buildPanels();
+  render();
+
+  status.textContent = "Ready";
 }
 
 if (document.readyState === "loading") {
