@@ -1,181 +1,97 @@
-body {
-  margin: 0;
-  background: #ece9e4;
-  min-height: 100vh;
-  font-family: system-ui, sans-serif;
-  overflow: hidden;
+const scene = document.getElementById("scene");
+const stack = document.getElementById("stack");
+const status = document.getElementById("status");
+const codeView = document.getElementById("codeView");
+
+let state = "start";
+let fileText = "";
+let snipText = "";
+
+function buildStartUI() {
+  stack.innerHTML = "";
+
+  // 🔥 TOP MESSAGE
+  const startMessage = document.createElement("div");
+  startMessage.className = "start-message";
+  startMessage.innerHTML = `
+  Replace & Erase;<br>
+  Luhvcraft sculpted intellectual form of silence through the art of preservation.
+  `;
+
+  const replaceBtn = document.createElement("button");
+  replaceBtn.className = "start-button replace-button";
+  replaceBtn.textContent = "REPLACE";
+
+  const eraseBtn = document.createElement("button");
+  eraseBtn.className = "start-button erase-button";
+  eraseBtn.textContent = "ERASE";
+
+  const amp = document.createElement("div");
+  amp.className = "start-amp";
+  amp.textContent = "&";
+
+  replaceBtn.addEventListener("click", activateMode);
+  eraseBtn.addEventListener("click", activateMode);
+
+  stack.appendChild(startMessage); // ← message added first
+  stack.appendChild(replaceBtn);
+  stack.appendChild(amp);
+  stack.appendChild(eraseBtn);
 }
 
-.canvas {
-  width: 100vw;
-  height: 100vh;
-  background: transparent;
-  position: relative;
-  overflow: hidden;
-  box-sizing: border-box;
+function activateMode() {
+  state = "active";
+  stack.innerHTML = "";
+
+  // FILE button (paste target)
+  const fileButton = document.createElement("textarea");
+  fileButton.className = "tool-button file-button";
+  fileButton.value = "FILE";
+  fileButton.readOnly = true;
+
+  // SNIP button (paste target)
+  const snipButton = document.createElement("textarea");
+  snipButton.className = "tool-button snip-button";
+  snipButton.value = "SNIP";
+  snipButton.readOnly = true;
+
+  // paste logic
+  fileButton.addEventListener("paste", (e) => {
+    e.preventDefault();
+    fileText = (e.clipboardData || window.clipboardData).getData("text");
+    status.textContent = "FILE received";
+  });
+
+  snipButton.addEventListener("paste", (e) => {
+    e.preventDefault();
+    snipText = (e.clipboardData || window.clipboardData).getData("text");
+    status.textContent = "SNIP received";
+  });
+
+  stack.appendChild(fileButton);
+  stack.appendChild(snipButton);
+
+  status.textContent = "FILE & SNIP";
 }
 
-.code-view {
-  position: absolute;
-  inset: 24px;
-  margin: 0;
-  padding: 22px;
-  box-sizing: border-box;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.55;
-  color: #2f2f2f;
-  border: 1px solid rgba(120,120,120,0.12);
-  border-radius: 20px;
-  background: rgba(255,255,255,0.38);
-  z-index: 10;
+function startDefaultCanvas() {
+  scene.style.display = "flex";
+  scene.style.inset = "0";
+
+  stack.style.position = "relative";
+  stack.style.width = "100vw";
+  stack.style.height = "100vh";
+
+  codeView.classList.add("hidden");
+  scene.classList.remove("hidden");
+
+  buildStartUI();
+
+  status.textContent = "REPLACE & ERASE";
 }
 
-.scene {
-  position: absolute;
-  inset: 0;
-  perspective: 1400px;
-  touch-action: pan-y;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 4;
-  background: transparent;
-  overflow: hidden;
-}
-
-.stack {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  transform-style: preserve-3d;
-}
-
-/* START BUTTONS */
-
-.start-button {
-  position: absolute;
-  top: 50%;
-  width: 112px;
-  height: 112px;
-  transform: translate(-50%, -50%);
-  border: 2px solid black;
-  border-radius: 14px;
-  background: white;
-  color: black;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  box-sizing: border-box;
-  transition:
-    left 0.35s ease,
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.replace-button {
-  left: 30%;
-}
-
-.erase-button {
-  left: 70%;
-}
-
-.start-amp {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 28px;
-  font-weight: 600;
-  color: black;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-/* AFTER CLICK: FILE / SNIP PASTE TARGETS */
-
-.tool-button {
-  position: absolute;
-  top: 50%;
-  width: 112px;
-  height: 112px;
-  transform: translate(-50%, -50%);
-  border: 2px solid black;
-  border-radius: 14px;
-  background: white;
-  color: black;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-align: center;
-  resize: none;
-  overflow: hidden;
-  cursor: pointer;
-  box-sizing: border-box;
-  outline: none;
-  padding: 0;
-  line-height: 112px;
-  caret-color: transparent;
-}
-
-.file-button {
-  left: 30%;
-}
-
-.snip-button {
-  left: 70%;
-}
-
-.tool-button::selection {
-  background: transparent;
-}
-
-.tool-button::-webkit-scrollbar {
-  display: none;
-}
-
-/* OLD PANEL SUPPORT */
-
-.panel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin: 0;
-  border: 2px solid black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #444;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.panel-label {
-  pointer-events: none;
-  letter-spacing: 0.06em;
-}
-
-.status {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 18px;
-  font-size: 13px;
-  color: rgba(40,40,40,0.58);
-  text-align: center;
-  min-height: 20px;
-  z-index: 6;
-  pointer-events: none;
-}
-
-.hidden {
-  display: none;
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", startDefaultCanvas);
+} else {
+  startDefaultCanvas();
 }
