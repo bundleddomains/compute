@@ -1,3 +1,4 @@
+
 const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const status = document.getElementById("status");
@@ -100,6 +101,7 @@ async function loadFromClipboard() {
 function buildPanels() {
   stack.innerHTML = "";
 
+  // LEFT + RIGHT PANELS
   activeTypes.forEach((type, i) => {
     const panel = document.createElement("div");
     panel.className = "panel";
@@ -115,7 +117,7 @@ function buildPanels() {
 
       panel.style.position = "absolute";
       panel.style.top = "50%";
-      panel.style.left = i === 0 ? "41%" : "59%";
+      panel.style.left = i === 0 ? "30%" : "70%"; // ← spaced out
       panel.style.transform = "translate(-50%, -50%)";
       panel.style.width = "112px";
       panel.style.height = "112px";
@@ -126,20 +128,28 @@ function buildPanels() {
       panel.style.justifyContent = "center";
       panel.style.background = "white";
       panel.style.color = "black";
-      panel.style.boxSizing = "border-box";
       panel.style.fontWeight = "700";
       panel.style.letterSpacing = "0.06em";
       panel.style.cursor = "pointer";
-    } else {
-      panel.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openPanelCode(type);
-      });
     }
 
     stack.appendChild(panel);
   });
+
+  // CENTER "&"
+  const amp = document.createElement("div");
+  amp.textContent = "&";
+
+  amp.style.position = "absolute";
+  amp.style.top = "50%";
+  amp.style.left = "50%";
+  amp.style.transform = "translate(-50%, -50%)";
+  amp.style.fontSize = "28px";
+  amp.style.fontWeight = "600";
+  amp.style.color = "black";
+  amp.style.pointerEvents = "none";
+
+  stack.appendChild(amp);
 }
 
 function wrapIndex(value) {
@@ -246,7 +256,7 @@ function startDefaultCanvas() {
   buildPanels();
   render();
 
-  status.textContent = "REPLACE or ERASE";
+  status.textContent = "REPLACE & ERASE";
 }
 
 if (document.readyState === "loading") {
