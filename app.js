@@ -113,10 +113,9 @@ function buildPanels() {
 
       panel.appendChild(textarea);
 
-      // 🔥 side by side layout
       panel.style.position = "absolute";
       panel.style.top = "50%";
-      panel.style.left = i === 0 ? "35%" : "65%";
+      panel.style.left = i === 0 ? "38%" : "62%";
       panel.style.transform = "translate(-50%, -50%)";
       panel.style.width = "160px";
       panel.style.height = "160px";
@@ -124,6 +123,10 @@ function buildPanels() {
       panel.style.borderRadius = "18px";
       panel.style.display = "grid";
       panel.style.placeItems = "center";
+      panel.style.background = "white";
+      panel.style.color = "black";
+      panel.style.boxSizing = "border-box";
+      panel.style.overflow = "hidden";
     } else {
       const label = document.createElement("div");
       label.className = "panel-label";
@@ -196,6 +199,8 @@ function render() {
     panel.style.borderRadius = "44px";
     panel.style.display = "grid";
     panel.style.placeItems = "center";
+    panel.style.background = "rgba(255,255,255,0.38)";
+    panel.style.color = "black";
 
     panel.style.transform = visual.transform;
     panel.style.opacity = visual.opacity;
