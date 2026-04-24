@@ -195,16 +195,26 @@ function render() {
     const offset = shortestStepDiff(rotation, index);
     const visual = getPanelVisual(offset);
 
+    const isLeftSide = offset < -0.5;
+
     panel.style.position = "absolute";
     panel.style.left = "50%";
     panel.style.top = "50%";
-    panel.style.width = "120px";
-    panel.style.height = "120px";
     panel.style.border = "2px solid black";
-    panel.style.borderRadius = "18px";
     panel.style.display = "grid";
     panel.style.placeItems = "center";
     panel.style.color = "black";
+    panel.style.transition = "width 0.35s ease, height 0.35s ease, border-radius 0.35s ease";
+
+    if (isLeftSide) {
+      panel.style.width = "100px";
+      panel.style.height = "320px";
+      panel.style.borderRadius = "44px";
+    } else {
+      panel.style.width = "120px";
+      panel.style.height = "120px";
+      panel.style.borderRadius = "18px";
+    }
 
     panel.style.transform = visual.transform;
     panel.style.opacity = visual.opacity;
@@ -350,11 +360,11 @@ window.addEventListener("mouseup", onEnd);
 function startDefaultCanvas() {
   scene.style.display = "block";
   scene.style.position = "relative";
-  scene.style.minHeight = "320px";
+  scene.style.minHeight = "420px";
 
   stack.style.position = "relative";
   stack.style.width = "100%";
-  stack.style.height = "320px";
+  stack.style.height = "420px";
 
   loadCode(DEFAULT_CODE);
 }
