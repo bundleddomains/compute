@@ -4,37 +4,18 @@ const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
 
 let state = "start";
-
-function createStackedLabel(textTop, textBottom) {
-  const wrap = document.createElement("div");
-  wrap.style.display = "flex";
-  wrap.style.flexDirection = "column";
-  wrap.style.alignItems = "center";
-  wrap.style.justifyContent = "center";
-  wrap.style.lineHeight = "1.1";
-
-  const top = document.createElement("div");
-  top.textContent = textTop;
-
-  const bottom = document.createElement("div");
-  bottom.textContent = textBottom;
-
-  wrap.appendChild(top);
-  wrap.appendChild(bottom);
-
-  return wrap;
-}
+let fileText = "";
+let snipText = "";
 
 function buildStartUI() {
   stack.innerHTML = "";
 
   const replaceBtn = document.createElement("button");
   replaceBtn.className = "start-button replace-button";
+  replaceBtn.textContent = "REPLACE";
 
   const eraseBtn = document.createElement("button");
   eraseBtn.className = "start-button erase-button";
-
-  replaceBtn.textContent = "REPLACE";
   eraseBtn.textContent = "ERASE";
 
   const amp = document.createElement("div");
@@ -51,50 +32,36 @@ function buildStartUI() {
 
 function activateMode() {
   state = "active";
-
   stack.innerHTML = "";
 
-  // THE FILE (left)
-  const filePanel = document.createElement("div");
-  filePanel.className = "tool-panel left";
+  const fileButton = document.createElement("textarea");
+  fileButton.className = "tool-button file-button";
+  fileButton.value = "FILE";
+  fileButton.readOnly = true;
 
-  const fileLabel = createStackedLabel("THE", "FILE");
+  const snipButton = document.createElement("textarea");
+  snipButton.className = "tool-button snip-button";
+  snipButton.value = "SNIP";
+  snipButton.readOnly = true;
 
-  const fileInput = document.createElement("textarea");
-  fileInput.className = "tool-input";
-  fileInput.placeholder = "";
-
-  filePanel.appendChild(fileLabel);
-  filePanel.appendChild(fileInput);
-
-  // THE SNIP (right)
-  const snipPanel = document.createElement("div");
-  snipPanel.className = "tool-panel right";
-
-  const snipLabel = createStackedLabel("THE", "SNIP");
-
-  const snipInput = document.createElement("textarea");
-  snipInput.className = "tool-input";
-  snipInput.placeholder = "";
-
-  snipPanel.appendChild(snipLabel);
-  snipPanel.appendChild(snipInput);
-
-  // paste logic (both)
-  const handlePaste = (e) => {
+  fileButton.addEventListener("paste", (e) => {
     e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData("text");
-    console.log("PASTED:", text);
-    status.textContent = "Code received";
-  };
+    fileText = (e.clipboardData || window.clipboardData).getData("text");
+    fileButton.value = "FILE";
+    status.textContent = "FILE received";
+  });
 
-  fileInput.addEventListener("paste", handlePaste);
-  snipInput.addEventListener("paste", handlePaste);
+  snipButton.addEventListener("paste", (e) => {
+    e.preventDefault();
+    snipText = (e.clipboardData || window.clipboardData).getData("text");
+    snipButton.value = "SNIP";
+    status.textContent = "SNIP received";
+  });
 
-  stack.appendChild(filePanel);
-  stack.appendChild(snipPanel);
+  stack.appendChild(fileButton);
+  stack.appendChild(snipButton);
 
-  status.textContent = "THE FILE & THE SNIP";
+  status.textContent = "FILE & SNIP";
 }
 
 function startDefaultCanvas() {
