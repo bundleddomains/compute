@@ -107,15 +107,11 @@ body {
   border-color: rgba(90, 154, 106, 0.26);
 }
 
-/* ---------- split revolving state ---------- */
+/* ---------- centered revolving state ---------- */
 
-/* LEFT HALF: revolving system */
 .scene {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 50vw;
-  height: 100vh;
+  inset: 0;
   perspective: 1400px;
   touch-action: pan-y;
   display: flex;
@@ -126,28 +122,13 @@ body {
   overflow: hidden;
 }
 
-/* RIGHT HALF: empty panel field */
-.right-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 50vw;
-  height: 100vh;
-  border-left: 2px solid black;
-  background: rgba(255,255,255,0.10);
-  z-index: 3;
-  box-sizing: border-box;
-}
-
-/* stack centered inside left half */
 .stack {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   transform-style: preserve-3d;
 }
 
-/* app.js controls panel size */
 .panel {
   position: absolute;
   top: 50%;
