@@ -5,15 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HTMLO Canvas</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    #pasteWrap {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
   <div id="canvas" class="canvas">
 
-    <!-- Code view still exists if needed -->
+    <div id="pasteWrap" class="paste-wrap hidden">
+      <div class="paste-title">Paste Code</div>
+      <textarea
+        id="pasteField"
+        class="paste-field"
+        spellcheck="false"
+      ></textarea>
+    </div>
+
     <pre id="codeView" class="code-view hidden"></pre>
 
-    <!-- Scene is now visible by default -->
     <div id="scene" class="scene">
       <div id="stack" class="stack"></div>
     </div>
