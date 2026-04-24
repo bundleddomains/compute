@@ -1,59 +1,21 @@
 body {
   margin: 0;
   background: #ece9e4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   font-family: system-ui, sans-serif;
   overflow: hidden;
 }
 
+/* full screen now — no white rounded box */
 .canvas {
-  width: min(92vw, 700px);
-  height: min(84vh, 560px);
-  background: #f7f5f2;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-}
-
-/* ---------- start paste state ---------- */
-
-.paste-wrap {
-  position: absolute;
-  inset: 0;
-  padding: 24px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 5;
-}
-
-.paste-title {
-  font-size: 14px;
-  color: rgba(40,40,40,0.58);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.paste-field {
-  flex: 1;
-  width: 100%;
-  resize: none;
-  border: 1px solid rgba(120,120,120,0.14);
-  border-radius: 18px;
-  background: rgba(255,255,255,0.58);
-  padding: 18px;
-  box-sizing: border-box;
-  outline: none;
-  font: inherit;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #333;
 }
 
 /* ---------- code view state ---------- */
@@ -126,8 +88,6 @@ body {
   transform: scale(0.96);
 }
 
-/* ---------- temporary color groups ---------- */
-
 .code-block.color-0 {
   background: rgba(110, 44, 58, 0.10);
   border-color: rgba(110, 44, 58, 0.22);
@@ -159,25 +119,23 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 4;
+  background: transparent;
 }
 
 .stack {
   position: relative;
-  width: 320px;
-  height: 250px;
+  width: 100vw;
+  height: 100vh;
   transform-style: preserve-3d;
 }
 
+/* app.js controls panel size now */
 .panel {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 120px;
-  height: 184px;
-  margin-left: -60px;
-  margin-top: -92px;
-  border-radius: 18px;
-  border: 1px solid rgba(120,120,120,0.18);
+  margin: 0;
+  border: 2px solid black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,13 +143,6 @@ body {
   color: #444;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-  transition:
-    transform 0.18s linear,
-    opacity 0.18s linear,
-    filter 0.18s linear,
-    box-shadow 0.18s linear,
-    background 0.18s linear,
-    border-color 0.18s linear;
   box-sizing: border-box;
   overflow: hidden;
   will-change: transform, opacity, filter;
@@ -209,9 +160,9 @@ body {
 }
 
 .panel.active-front {
-  border-color: rgba(110, 44, 58, 0.42);
+  border-color: black;
   box-shadow:
-    0 0 0 2px rgba(110, 44, 58, 0.08),
+    0 0 0 2px rgba(0,0,0,0.06),
     0 14px 30px rgba(0,0,0,0.10);
 }
 
