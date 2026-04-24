@@ -5,6 +5,27 @@ const stack = document.getElementById("stack");
 const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
 
+const DEFAULT_CODE = `
+<div class="for-u">For-u</div>
+
+<style>
+.for-u {
+  width: 140px;
+  height: 140px;
+  display: grid;
+  place-items: center;
+  border: 2px solid black;
+  border-radius: 18px;
+  font-family: serif;
+  background: white;
+}
+</style>
+
+<script>
+console.log("For-u loaded");
+</script>
+`;
+
 const panelStore = {
   html: "",
   css: "",
@@ -68,9 +89,7 @@ function splitMixedCode(text) {
     .replace(svgRegex, "")
     .trim();
 
-  if (htmlOnly) {
-    result.html = cleanBlock(htmlOnly);
-  }
+  if (htmlOnly) result.html = cleanBlock(htmlOnly);
 
   return result;
 }
@@ -100,8 +119,7 @@ function loadCode(text) {
   panelStore.svg = "";
 
   if (looksLikeMixedDocument(text)) {
-    const split = splitMixedCode(text);
-    Object.assign(panelStore, split);
+    Object.assign(panelStore, splitMixedCode(text));
   } else {
     const type = detectSingleCodeType(text);
     if (type) panelStore[type] = text.trim();
@@ -121,11 +139,11 @@ function loadCode(text) {
   buildPanels();
   render();
 
-  pasteWrap.classList.add("hidden");
-  codeView.classList.add("hidden");
-  scene.classList.remove("hidden");
+  if (pasteWrap) pasteWrap.classList.add("hidden");
+  if (codeView) codeView.classList.add("hidden");
+  if (scene) scene.classList.remove("hidden");
 
-  status.textContent = `Loaded ${activeTypes.map(t => t.toUpperCase()).join(" · ")}`;
+  status.textContent = `${prettyLabel(activeFrontType)} ready`;
 }
 
 function buildPanels() {
@@ -273,9 +291,7 @@ function splitHtmlIntoBlocks(htmlText) {
     if (cleaned) blocks.push(cleaned);
   }
 
-  if (!blocks.length && htmlText.trim()) {
-    blocks.push(htmlText.trim());
-  }
+  if (!blocks.length && htmlText.trim()) blocks.push(htmlText.trim());
 
   return blocks;
 }
@@ -325,9 +341,7 @@ function splitSvgIntoBlocks(svgText) {
     if (cleaned) blocks.push(cleaned);
   }
 
-  if (!blocks.length && svgText.trim()) {
-    blocks.push(svgText.trim());
-  }
+  if (!blocks.length && svgText.trim()) blocks.push(svgText.trim());
 
   return blocks;
 }
@@ -431,9 +445,7 @@ function enableCodeBlockSelection() {
 
       if (!dragStarted && !swipeMode) {
         if (!isSelected) {
-          if (absX > 18 && absX > absY * 1.2) {
-            swipeMode = true;
-          }
+          if (absX > 18 && absX > absY * 1.2) swipeMode = true;
         } else {
           if (Math.hypot(dx, dy) > 8) {
             dragStarted = true;
@@ -486,12 +498,7 @@ function enableCodeBlockSelection() {
             blocksToErase.forEach((groupBlock) => groupBlock.remove());
 
             const remainingBlocks = codeView.querySelectorAll(".code-block").length;
-            if (!remainingBlocks) {
-              codeView.innerHTML = "";
-              status.textContent = "All blocks erased";
-            } else {
-              status.textContent = "Grouped block erase";
-            }
+            status.textContent = remainingBlocks ? "Grouped block erase" : "All blocks erased";
           }, 180);
         } else {
           resetDraggedGroup();
@@ -513,19 +520,12 @@ function renderCodeContent(type, content) {
 
   let blocks = [];
 
-  if (type === "css") {
-    blocks = splitCssIntoBlocks(content);
-  } else if (type === "html") {
-    blocks = splitHtmlIntoBlocks(content);
-  } else if (type === "js") {
-    blocks = splitJsIntoBlocks(content);
-  } else if (type === "svg") {
-    blocks = splitSvgIntoBlocks(content);
-  }
+  if (type === "css") blocks = splitCssIntoBlocks(content);
+  else if (type === "html") blocks = splitHtmlIntoBlocks(content);
+  else if (type === "js") blocks = splitJsIntoBlocks(content);
+  else if (type === "svg") blocks = splitSvgIntoBlocks(content);
 
-  if (!blocks.length) {
-    blocks = [content];
-  }
+  if (!blocks.length) blocks = [content];
 
   codeView.innerHTML = blocks
     .map(
@@ -643,21 +643,23 @@ function onEnd() {
   startMomentum();
 }
 
-pasteField.addEventListener("paste", (e) => {
-  e.preventDefault();
-  const text = (e.clipboardData || window.clipboardData).getData("text");
-  pasteField.value = "";
-  loadCode(text);
-});
-
-pasteField.addEventListener("keydown", (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") return;
-
-  if (e.key === "Enter" && pasteField.value.trim()) {
+if (pasteField) {
+  pasteField.addEventListener("paste", (e) => {
     e.preventDefault();
-    loadCode(pasteField.value);
-  }
-});
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    pasteField.value = "";
+    loadCode(text);
+  });
+
+  pasteField.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") return;
+
+    if (e.key === "Enter" && pasteField.value.trim()) {
+      e.preventDefault();
+      loadCode(pasteField.value);
+    }
+  });
+}
 
 scene.addEventListener("touchstart", (e) => {
   if (e.touches.length !== 1) return;
@@ -680,3 +682,7 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", onEnd);
+
+window.addEventListener("DOMContentLoaded", () => {
+  loadCode(DEFAULT_CODE);
+});
