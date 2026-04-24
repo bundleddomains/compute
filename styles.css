@@ -6,7 +6,6 @@ body {
   overflow: hidden;
 }
 
-/* full screen now — no white rounded box */
 .canvas {
   width: 100vw;
   height: 100vh;
@@ -36,7 +35,7 @@ body {
   border: 1px solid rgba(120,120,120,0.12);
   border-radius: 20px;
   background: rgba(255,255,255,0.38);
-  z-index: 1;
+  z-index: 10;
 }
 
 .code-view.block-mode {
@@ -108,11 +107,15 @@ body {
   border-color: rgba(90, 154, 106, 0.26);
 }
 
-/* ---------- revolving state ---------- */
+/* ---------- split revolving state ---------- */
 
+/* LEFT HALF: revolving system */
 .scene {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
   perspective: 1400px;
   touch-action: pan-y;
   display: flex;
@@ -120,16 +123,31 @@ body {
   justify-content: center;
   z-index: 4;
   background: transparent;
+  overflow: hidden;
 }
 
+/* RIGHT HALF: empty panel field */
+.right-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  border-left: 2px solid black;
+  background: rgba(255,255,255,0.10);
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+/* stack centered inside left half */
 .stack {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
 }
 
-/* app.js controls panel size now */
+/* app.js controls panel size */
 .panel {
   position: absolute;
   top: 50%;
