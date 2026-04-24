@@ -17,8 +17,6 @@ body {
   box-sizing: border-box;
 }
 
-/* ---------- code view state ---------- */
-
 .code-view {
   position: absolute;
   inset: 24px;
@@ -163,6 +161,33 @@ body {
   box-shadow:
     0 0 0 2px rgba(0,0,0,0.06),
     0 14px 30px rgba(0,0,0,0.10);
+}
+
+/* ---------- replace / erase start panels ---------- */
+
+.paste-panel-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  background: white;
+  color: black;
+  text-align: center;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0;
+  box-sizing: border-box;
+  display: block;
+  line-height: 160px;
+  overflow: hidden;
+}
+
+.paste-panel-input::placeholder {
+  color: black;
+  opacity: 1;
 }
 
 .status {
