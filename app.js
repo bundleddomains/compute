@@ -2,6 +2,7 @@ const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
+const rightPanel = document.getElementById("rightPanel");
 
 const DEFAULT_CODE = `
 <div class="for-u">For-u</div>
@@ -105,6 +106,8 @@ function loadCode(text) {
   scene.classList.remove("hidden");
   codeView.classList.add("hidden");
 
+  if (rightPanel) rightPanel.classList.remove("hidden");
+
   status.textContent = `${prettyLabel(activeFrontType)} ready`;
 }
 
@@ -171,8 +174,8 @@ function getPanelVisual(stepOffset) {
   return {
     transform: `
       translate(-50%, -50%)
-      translateX(${x * 126}px)
-      translateZ(${80 - abs * 58}px)
+      translateX(${x * 86}px)
+      translateZ(${70 - abs * 52}px)
       rotateY(${-x * 16}deg)
       scale(${1 - abs * 0.06})
     `,
@@ -198,8 +201,10 @@ function render() {
     panel.style.position = "absolute";
     panel.style.left = "50%";
     panel.style.top = "50%";
-    panel.style.width = "110px";
-    panel.style.height = "360px";
+    panel.style.width = "90px";
+    panel.style.height = "72vh";
+    panel.style.maxHeight = "640px";
+    panel.style.minHeight = "420px";
     panel.style.border = "2px solid black";
     panel.style.borderRadius = "44px";
     panel.style.display = "grid";
@@ -228,6 +233,8 @@ function escapeHtml(text) {
 function openPanelCode(type) {
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
+
+  if (rightPanel) rightPanel.classList.add("hidden");
 
   codeView.innerHTML = `<pre>${escapeHtml(panelStore[type])}</pre>`;
   status.textContent = `${prettyLabel(type)} opened`;
@@ -349,13 +356,20 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("mouseup", onEnd);
 
 function startDefaultCanvas() {
-  scene.style.display = "block";
-  scene.style.position = "relative";
-  scene.style.minHeight = "500px";
+  scene.style.display = "flex";
+  scene.style.position = "absolute";
+  scene.style.left = "0";
+  scene.style.top = "0";
+  scene.style.width = "50vw";
+  scene.style.height = "100vh";
 
   stack.style.position = "relative";
   stack.style.width = "100%";
-  stack.style.height = "500px";
+  stack.style.height = "100%";
+
+  if (rightPanel) {
+    rightPanel.style.display = "block";
+  }
 
   loadCode(DEFAULT_CODE);
 }
