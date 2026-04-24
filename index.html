@@ -5,47 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HTMLO Canvas</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <style>
-    .paste-wrap {
-      padding-bottom: 18px;
-      overflow: auto;
-    }
-
-    .paste-field {
-      flex: 0 0 auto;
-      height: 180px;
-    }
-
-    @media (max-width: 700px) {
-      .paste-field {
-        height: 140px;
-      }
-    }
-  </style>
 </head>
 
 <body>
   <div id="canvas" class="canvas">
-    
-    <div id="pasteWrap" class="paste-wrap">
-      <div class="paste-title">Paste Code</div>
 
-      <textarea
-        id="pasteField"
-        class="paste-field"
-        spellcheck="false"
-        placeholder="Paste HTML, CSS, JS, SVG, or a mixed document..."
-      ></textarea>
-    </div>
-
+    <!-- Code view still exists if needed -->
     <pre id="codeView" class="code-view hidden"></pre>
 
-    <div id="scene" class="scene hidden">
+    <!-- Scene is now visible by default -->
+    <div id="scene" class="scene">
       <div id="stack" class="stack"></div>
     </div>
 
-    <div id="status" class="status">Paste code to begin</div>
+    <div id="status" class="status">Loaded</div>
   </div>
 
   <script src="app.js"></script>
