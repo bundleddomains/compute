@@ -59,14 +59,45 @@ function eraseToFileMode() {
 }
 
 function activateFilePaste(el) {
+  el.tabIndex = 0;
+
   el.addEventListener("click", () => {
     el.focus();
   });
 
   el.addEventListener("paste", (e) => {
     e.preventDefault();
+
     fileText = (e.clipboardData || window.clipboardData).getData("text");
-    status.textContent = "FILE received";
+
+    el.dataset.stored = "true";
+    el.textContent = "FILE ✓";
+  });
+}
+
+function activatePasteBox(el, type) {
+  el.tabIndex = 0;
+
+  el.addEventListener("click", () => {
+    el.focus();
+  });
+
+  el.addEventListener("paste", (e) => {
+    e.preventDefault();
+
+    const pasted = (e.clipboardData || window.clipboardData).getData("text");
+
+    if (type === "FILE") {
+      fileText = pasted;
+      el.dataset.stored = "true";
+      el.textContent = "FILE ✓";
+    }
+
+    if (type === "SNIP") {
+      snipText = pasted;
+      el.dataset.stored = "true";
+      el.textContent = "SNIP ✓";
+    }
   });
 }
 
@@ -74,31 +105,20 @@ function activateMode() {
   state = "active";
   stack.innerHTML = "";
 
-  const fileButton = document.createElement("textarea");
-  fileButton.className = "tool-button file-button";
-  fileButton.value = "FILE";
-  fileButton.readOnly = true;
+  const fileButton = document.createElement("div");
+  fileButton.className = "tool-button file-button paste-box";
+  fileButton.textContent = "FILE";
 
   const amp = document.createElement("div");
   amp.className = "start-amp";
   amp.textContent = "&";
 
-  const snipButton = document.createElement("textarea");
-  snipButton.className = "tool-button snip-button";
-  snipButton.value = "SNIP";
-  snipButton.readOnly = true;
+  const snipButton = document.createElement("div");
+  snipButton.className = "tool-button snip-button paste-box";
+  snipButton.textContent = "SNIP";
 
-  fileButton.addEventListener("paste", (e) => {
-    e.preventDefault();
-    fileText = (e.clipboardData || window.clipboardData).getData("text");
-    status.textContent = "FILE received";
-  });
-
-  snipButton.addEventListener("paste", (e) => {
-    e.preventDefault();
-    snipText = (e.clipboardData || window.clipboardData).getData("text");
-    status.textContent = "SNIP received";
-  });
+  activatePasteBox(fileButton, "FILE");
+  activatePasteBox(snipButton, "SNIP");
 
   stack.appendChild(fileButton);
   stack.appendChild(amp);
