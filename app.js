@@ -6,34 +6,6 @@ const codeView = document.getElementById("codeView");
 let state = "start";
 let fileText = "";
 let snipText = "";
-let activePasteTarget = null;
-
-const pasteReceiver = document.createElement("textarea");
-pasteReceiver.style.position = "fixed";
-pasteReceiver.style.left = "-9999px";
-pasteReceiver.style.top = "0";
-document.body.appendChild(pasteReceiver);
-
-pasteReceiver.addEventListener("paste", (e) => {
-  e.preventDefault();
-
-  const pasted = (e.clipboardData || window.clipboardData).getData("text");
-  if (!activePasteTarget) return;
-
-  const { el, type } = activePasteTarget;
-
-  if (type === "FILE") {
-    fileText = pasted;
-    el.dataset.stored = "true";
-    el.textContent = "FILE ✓";
-  }
-
-  if (type === "SNIP") {
-    snipText = pasted;
-    el.dataset.stored = "true";
-    el.textContent = "SNIP ✓";
-  }
-});
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -67,64 +39,73 @@ function buildStartUI() {
 }
 
 function eraseToFileMode() {
-  state = "erasing";
+  state = "file";
 
   const replaceBtn = stack.querySelector(".replace-button");
   const eraseBtn = stack.querySelector(".erase-button");
   const amp = stack.querySelector(".start-amp");
 
-  replaceBtn.textContent = "FILE";
-  replaceBtn.classList.remove("replace-button");
-  replaceBtn.classList.add("file-button", "file-center");
+  // stop old REPLACE click behavior
+  replaceBtn.replaceWith(replaceBtn.cloneNode(true));
+
+  const fileBox = stack.querySelector(".replace-button");
+  fileBox.textContent = "FILE";
+  fileBox.className = "start-button file-button file-center move-center";
 
   eraseBtn.classList.add("fade-away");
   amp.classList.add("fade-away");
-  replaceBtn.classList.add("move-center");
 
-  const cleanFile = replaceBtn.cloneNode(true);
-  replaceBtn.replaceWith(cleanFile);
-
-  activateFilePaste(cleanFile);
-
-  state = "file";
-}
-
-function activateFilePaste(el) {
-  activatePasteBox(el, "FILE");
-}
-
-function activatePasteBox(el, type) {
-  el.addEventListener("click", () => {
-    activePasteTarget = { el, type };
-    pasteReceiver.value = "";
-    pasteReceiver.focus();
+  fileBox.addEventListener("click", () => {
+    fileBox.focus();
   });
+}
+
+function makePasteBox(label, type) {
+  const box = document.createElement("textarea");
+  box.className = `tool-button ${type.toLowerCase()}-button`;
+  box.value = label;
+  box.spellcheck = false;
+
+  box.addEventListener("focus", () => {
+    box.value = "";
+  });
+
+  box.addEventListener("paste", (e) => {
+    e.preventDefault();
+
+    const pasted = (e.clipboardData || window.clipboardData).getData("text");
+
+    if (type === "FILE") {
+      fileText = pasted;
+      box.value = "FILE ✓";
+    }
+
+    if (type === "SNIP") {
+      snipText = pasted;
+      box.value = "SNIP ✓";
+    }
+
+    box.blur();
+  });
+
+  return box;
 }
 
 function activateMode() {
   state = "active";
   stack.innerHTML = "";
 
-  const fileButton = document.createElement("div");
-  fileButton.className = "tool-button file-button paste-box";
-  fileButton.textContent = "FILE";
+  const fileButton = makePasteBox("FILE", "FILE");
 
   const amp = document.createElement("div");
   amp.className = "start-amp";
   amp.textContent = "&";
 
-  const snipButton = document.createElement("div");
-  snipButton.className = "tool-button snip-button paste-box";
-  snipButton.textContent = "SNIP";
-
-  activatePasteBox(fileButton, "FILE");
-  activatePasteBox(snipButton, "SNIP");
+  const snipButton = makePasteBox("SNIP", "SNIP");
 
   stack.appendChild(fileButton);
   stack.appendChild(amp);
   stack.appendChild(snipButton);
-
-  status.textContent = "FILE & SNIP";
 }
 
 function startDefaultCanvas() {
@@ -139,8 +120,6 @@ function startDefaultCanvas() {
   scene.classList.remove("hidden");
 
   buildStartUI();
-
-  status.textContent = "REPLACE & ERASE";
 }
 
 if (document.readyState === "loading") {
