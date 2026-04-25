@@ -58,16 +58,17 @@ body {
 
 .start-message {
   position: absolute;
-  top: 18%;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 82vw;
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.45;
-  letter-spacing: 0.04em;
-  color: rgba(0,0,0,0.62);
+  top: 6%;
+  left: 6%;
+  transform: rotate(-8deg);
+  max-width: 320px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  color: rgba(0,0,0,0.22);
   pointer-events: none;
+  user-select: none;
 }
 
 /* ---------- START BUTTONS ---------- */
@@ -141,7 +142,7 @@ body {
   background: white;
   color: black;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-align: center;
@@ -153,6 +154,8 @@ body {
   padding: 0;
   line-height: 112px;
   caret-color: transparent;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .file-button {
@@ -178,16 +181,7 @@ body {
 /* ---------- STATUS ---------- */
 
 .status {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 18px;
-  font-size: 13px;
-  color: rgba(40,40,40,0.58);
-  text-align: center;
-  min-height: 20px;
-  z-index: 6;
-  pointer-events: none;
+  display: none;
 }
 
 /* ---------- UTIL ---------- */
