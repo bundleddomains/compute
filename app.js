@@ -6,6 +6,34 @@ const codeView = document.getElementById("codeView");
 let state = "start";
 let fileText = "";
 let snipText = "";
+let activePasteTarget = null;
+
+const pasteReceiver = document.createElement("textarea");
+pasteReceiver.style.position = "fixed";
+pasteReceiver.style.left = "-9999px";
+pasteReceiver.style.top = "0";
+document.body.appendChild(pasteReceiver);
+
+pasteReceiver.addEventListener("paste", (e) => {
+  e.preventDefault();
+
+  const pasted = (e.clipboardData || window.clipboardData).getData("text");
+  if (!activePasteTarget) return;
+
+  const { el, type } = activePasteTarget;
+
+  if (type === "FILE") {
+    fileText = pasted;
+    el.dataset.stored = "true";
+    el.textContent = "FILE ✓";
+  }
+
+  if (type === "SNIP") {
+    snipText = pasted;
+    el.dataset.stored = "true";
+    el.textContent = "SNIP ✓";
+  }
+});
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -53,51 +81,23 @@ function eraseToFileMode() {
   amp.classList.add("fade-away");
   replaceBtn.classList.add("move-center");
 
-  activateFilePaste(replaceBtn);
+  const cleanFile = replaceBtn.cloneNode(true);
+  replaceBtn.replaceWith(cleanFile);
+
+  activateFilePaste(cleanFile);
 
   state = "file";
 }
 
 function activateFilePaste(el) {
-  el.tabIndex = 0;
-
-  el.addEventListener("click", () => {
-    el.focus();
-  });
-
-  el.addEventListener("paste", (e) => {
-    e.preventDefault();
-
-    fileText = (e.clipboardData || window.clipboardData).getData("text");
-
-    el.dataset.stored = "true";
-    el.textContent = "FILE ✓";
-  });
+  activatePasteBox(el, "FILE");
 }
 
 function activatePasteBox(el, type) {
-  el.tabIndex = 0;
-
   el.addEventListener("click", () => {
-    el.focus();
-  });
-
-  el.addEventListener("paste", (e) => {
-    e.preventDefault();
-
-    const pasted = (e.clipboardData || window.clipboardData).getData("text");
-
-    if (type === "FILE") {
-      fileText = pasted;
-      el.dataset.stored = "true";
-      el.textContent = "FILE ✓";
-    }
-
-    if (type === "SNIP") {
-      snipText = pasted;
-      el.dataset.stored = "true";
-      el.textContent = "SNIP ✓";
-    }
+    activePasteTarget = { el, type };
+    pasteReceiver.value = "";
+    pasteReceiver.focus();
   });
 }
 
