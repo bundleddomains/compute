@@ -89,9 +89,9 @@ body {
   cursor: pointer;
   box-sizing: border-box;
   transition:
-    left 0.35s ease,
-    opacity 0.3s ease,
-    transform 0.3s ease;
+    left 0.42s ease,
+    opacity 0.34s ease,
+    transform 0.34s ease;
 }
 
 .replace-button {
@@ -111,6 +111,21 @@ body {
   font-weight: 600;
   color: black;
   pointer-events: none;
+  transition:
+    opacity 0.34s ease,
+    transform 0.34s ease;
+}
+
+/* ---------- ERASE START ANIMATION ---------- */
+
+.fade-away {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  pointer-events: none;
+}
+
+.move-center {
+  left: 50%;
 }
 
 /* ---------- FILE / SNIP BUTTONS ---------- */
@@ -140,7 +155,6 @@ body {
   caret-color: transparent;
 }
 
-/* positioning */
 .file-button {
   left: 30%;
 }
@@ -149,7 +163,10 @@ body {
   left: 70%;
 }
 
-/* hide selection + scroll */
+.file-center {
+  left: 50%;
+}
+
 .tool-button::selection {
   background: transparent;
 }
