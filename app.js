@@ -10,12 +10,11 @@ let snipText = "";
 function buildStartUI() {
   stack.innerHTML = "";
 
-  // 🔥 TOP MESSAGE
   const startMessage = document.createElement("div");
   startMessage.className = "start-message";
   startMessage.innerHTML = `
-  Replace & Erase;<br>
-  Luhvcraft sculpted intellectual form of silence through the art of preservation.
+    Replace & Erase;<br>
+    Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
   const replaceBtn = document.createElement("button");
@@ -31,31 +30,65 @@ function buildStartUI() {
   amp.textContent = "&";
 
   replaceBtn.addEventListener("click", activateMode);
-  eraseBtn.addEventListener("click", activateMode);
+  eraseBtn.addEventListener("click", eraseToFileMode);
 
-  stack.appendChild(startMessage); // ← message added first
+  stack.appendChild(startMessage);
   stack.appendChild(replaceBtn);
   stack.appendChild(amp);
   stack.appendChild(eraseBtn);
+}
+
+function eraseToFileMode() {
+  state = "erasing";
+
+  const replaceBtn = stack.querySelector(".replace-button");
+  const eraseBtn = stack.querySelector(".erase-button");
+  const amp = stack.querySelector(".start-amp");
+
+  eraseBtn.classList.add("fade-away");
+  amp.classList.add("fade-away");
+  replaceBtn.classList.add("move-center");
+
+  status.textContent = "ERASING";
+
+  setTimeout(() => {
+    activateFileOnlyMode();
+  }, 520);
+}
+
+function activateFileOnlyMode() {
+  state = "file";
+  stack.innerHTML = "";
+
+  const fileButton = document.createElement("textarea");
+  fileButton.className = "tool-button file-button file-center";
+  fileButton.value = "FILE";
+  fileButton.readOnly = true;
+
+  fileButton.addEventListener("paste", (e) => {
+    e.preventDefault();
+    fileText = (e.clipboardData || window.clipboardData).getData("text");
+    status.textContent = "FILE received";
+  });
+
+  stack.appendChild(fileButton);
+  status.textContent = "FILE";
 }
 
 function activateMode() {
   state = "active";
   stack.innerHTML = "";
 
-  // FILE button (paste target)
   const fileButton = document.createElement("textarea");
   fileButton.className = "tool-button file-button";
   fileButton.value = "FILE";
   fileButton.readOnly = true;
 
-  // SNIP button (paste target)
   const snipButton = document.createElement("textarea");
   snipButton.className = "tool-button snip-button";
   snipButton.value = "SNIP";
   snipButton.readOnly = true;
 
-  // paste logic
   fileButton.addEventListener("paste", (e) => {
     e.preventDefault();
     fileText = (e.clipboardData || window.clipboardData).getData("text");
