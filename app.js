@@ -45,18 +45,17 @@ function eraseToFileMode() {
   const eraseBtn = stack.querySelector(".erase-button");
   const amp = stack.querySelector(".start-amp");
 
-  // stop old REPLACE click behavior
-  replaceBtn.replaceWith(replaceBtn.cloneNode(true));
+  const cleanFile = replaceBtn.cloneNode(true);
+  replaceBtn.replaceWith(cleanFile);
 
-  const fileBox = stack.querySelector(".replace-button");
-  fileBox.textContent = "FILE";
-  fileBox.className = "start-button file-button file-center move-center";
+  cleanFile.textContent = "FILE";
+  cleanFile.className = "start-button file-button file-center move-center";
 
   eraseBtn.classList.add("fade-away");
   amp.classList.add("fade-away");
 
-  fileBox.addEventListener("click", () => {
-    fileBox.focus();
+  cleanFile.addEventListener("click", () => {
+    cleanFile.focus();
   });
 }
 
@@ -65,9 +64,14 @@ function makePasteBox(label, type) {
   box.className = `tool-button ${type.toLowerCase()}-button`;
   box.value = label;
   box.spellcheck = false;
+  box.autocapitalize = "off";
+  box.autocomplete = "off";
+  box.autocorrect = "off";
+  box.readOnly = false;
 
   box.addEventListener("focus", () => {
-    box.value = "";
+    box.value = label;
+    box.setSelectionRange(0, box.value.length);
   });
 
   box.addEventListener("paste", (e) => {
