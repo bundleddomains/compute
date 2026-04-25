@@ -52,27 +52,28 @@ function eraseToFileMode() {
   status.textContent = "ERASING";
 
   setTimeout(() => {
-    activateFileOnlyMode();
-  }, 520);
+    state = "file";
+
+    replaceBtn.textContent = "FILE";
+    replaceBtn.classList.remove("replace-button");
+    replaceBtn.classList.add("file-button");
+
+    activateFilePaste(replaceBtn);
+
+    status.textContent = "FILE";
+  }, 420);
 }
 
-function activateFileOnlyMode() {
-  state = "file";
-  stack.innerHTML = "";
+function activateFilePaste(el) {
+  el.addEventListener("click", () => {
+    el.focus();
+  });
 
-  const fileButton = document.createElement("textarea");
-  fileButton.className = "tool-button file-button file-center";
-  fileButton.value = "FILE";
-  fileButton.readOnly = true;
-
-  fileButton.addEventListener("paste", (e) => {
+  el.addEventListener("paste", (e) => {
     e.preventDefault();
     fileText = (e.clipboardData || window.clipboardData).getData("text");
     status.textContent = "FILE received";
   });
-
-  stack.appendChild(fileButton);
-  status.textContent = "FILE";
 }
 
 function activateMode() {
