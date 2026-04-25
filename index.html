@@ -4,7 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HTMLO Canvas</title>
-  <link rel="stylesheet" href="styles.css" />
+
+  <script>
+    const version = Date.now();
+
+    document.write(
+      `<link rel="stylesheet" href="styles.css?v=${version}">`
+    );
+  </script>
 </head>
 
 <body>
@@ -19,6 +26,10 @@
     <div id="status" class="status">Ready</div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    const script = document.createElement("script");
+    script.src = "app.js?v=" + Date.now();
+    document.body.appendChild(script);
+  </script>
 </body>
 </html>
