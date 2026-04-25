@@ -56,7 +56,7 @@ function eraseToFileMode() {
 
     replaceBtn.textContent = "FILE";
     replaceBtn.classList.remove("replace-button");
-    replaceBtn.classList.add("file-button");
+    replaceBtn.classList.add("file-button", "file-center");
 
     activateFilePaste(replaceBtn);
 
