@@ -45,23 +45,17 @@ function eraseToFileMode() {
   const eraseBtn = stack.querySelector(".erase-button");
   const amp = stack.querySelector(".start-amp");
 
+  replaceBtn.textContent = "FILE";
+  replaceBtn.classList.remove("replace-button");
+  replaceBtn.classList.add("file-button", "file-center");
+
   eraseBtn.classList.add("fade-away");
   amp.classList.add("fade-away");
   replaceBtn.classList.add("move-center");
 
-  status.textContent = "ERASING";
+  activateFilePaste(replaceBtn);
 
-  setTimeout(() => {
-    state = "file";
-
-    replaceBtn.textContent = "FILE";
-    replaceBtn.classList.remove("replace-button");
-    replaceBtn.classList.add("file-button", "file-center");
-
-    activateFilePaste(replaceBtn);
-
-    status.textContent = "FILE";
-  }, 420);
+  state = "file";
 }
 
 function activateFilePaste(el) {
