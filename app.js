@@ -38,6 +38,17 @@ function buildStartUI() {
   stack.appendChild(eraseBtn);
 }
 
+function autoGrow(box) {
+  box.style.height = "auto";
+
+  const idealHeight = Math.min(
+    box.scrollHeight,
+    window.innerHeight * 0.72
+  );
+
+  box.style.height = idealHeight + "px";
+}
+
 function eraseToFileMode() {
   state = "file";
 
@@ -70,8 +81,10 @@ function makePasteBox(label, type) {
   box.readOnly = false;
 
   box.addEventListener("focus", () => {
-    box.value = label;
-    box.setSelectionRange(0, box.value.length);
+    if (!box.classList.contains("expanded")) {
+      box.value = label;
+      box.setSelectionRange(0, box.value.length);
+    }
   });
 
   box.addEventListener("paste", (e) => {
@@ -81,15 +94,31 @@ function makePasteBox(label, type) {
 
     if (type === "FILE") {
       fileText = pasted;
-      box.value = "FILE ✓";
     }
 
     if (type === "SNIP") {
       snipText = pasted;
-      box.value = "SNIP ✓";
     }
 
-    box.blur();
+    box.value = pasted;
+    box.classList.add("expanded");
+
+    requestAnimationFrame(() => {
+      autoGrow(box);
+      box.blur();
+    });
+  });
+
+  box.addEventListener("input", () => {
+    autoGrow(box);
+
+    if (type === "FILE") {
+      fileText = box.value;
+    }
+
+    if (type === "SNIP") {
+      snipText = box.value;
+    }
   });
 
   return box;
