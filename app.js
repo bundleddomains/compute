@@ -2,13 +2,6 @@ const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 
-const panelStore = {
-  html: "",
-  css: "",
-  js: "",
-  svg: ""
-};
-
 function buildStartUI() {
   stack.innerHTML = "";
 
@@ -30,6 +23,11 @@ function makeMainPasteBox() {
   box.className = "start-button main-button main-paste";
   box.value = "REPLACE & ERASE";
 
+  box.spellcheck = false;
+  box.autocapitalize = "off";
+  box.autocomplete = "off";
+  box.autocorrect = "off";
+
   box.addEventListener("focus", () => {
     box.setSelectionRange(0, box.value.length);
   });
@@ -37,89 +35,96 @@ function makeMainPasteBox() {
   box.addEventListener("paste", (e) => {
     e.preventDefault();
     const text = (e.clipboardData || window.clipboardData).getData("text");
-    loadCode(text);
+    renderSeparatedBlocks(text);
   });
 
   return box;
 }
 
-/* ---------- DETECTION ---------- */
-
-function splitMixedCode(text) {
-  const result = { html: "", css: "", js: "", svg: "" };
+function splitCode(text) {
+  const parts = [];
 
   const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
   const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
   const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
 
-  const styles = [...text.matchAll(styleRegex)].map(m => m[1].trim());
-  const scripts = [...text.matchAll(scriptRegex)].map(m => m[1].trim());
-  const svgs = [...text.matchAll(svgRegex)].map(m => m[0].trim());
+  let html = text;
 
-  if (styles.length) result.css = styles.join("\n\n");
-  if (scripts.length) result.js = scripts.join("\n\n");
-  if (svgs.length) result.svg = svgs.join("\n\n");
+  const styles = [...text.matchAll(styleRegex)].map(m => m[1].trim()).filter(Boolean);
+  const scripts = [...text.matchAll(scriptRegex)].map(m => m[1].trim()).filter(Boolean);
+  const svgs = [...text.matchAll(svgRegex)].map(m => m[0].trim()).filter(Boolean);
 
-  const htmlOnly = text
+  html = html
     .replace(styleRegex, "")
     .replace(scriptRegex, "")
     .replace(svgRegex, "")
     .trim();
 
-  if (htmlOnly) result.html = htmlOnly;
+  if (html) parts.push({ type: "html", content: html });
+  if (styles.length) parts.push({ type: "css", content: styles.join("\n\n") });
+  if (scripts.length) parts.push({ type: "js", content: scripts.join("\n\n") });
+  if (svgs.length) parts.push({ type: "svg", content: svgs.join("\n\n") });
 
-  return result;
+  return parts;
 }
 
-function loadCode(text) {
-  Object.assign(panelStore, splitMixedCode(text));
+function splitCssBlocks(cssText) {
+  const blocks = [];
+  let current = "";
+  let depth = 0;
 
-  renderPanels();
+  for (const char of cssText) {
+    current += char;
+
+    if (char === "{") depth++;
+    if (char === "}") {
+      depth--;
+
+      if (depth === 0) {
+        const cleaned = current.trim();
+        if (cleaned) blocks.push(cleaned);
+        current = "";
+      }
+    }
+  }
+
+  const leftover = current.trim();
+  if (leftover) blocks.push(leftover);
+
+  return blocks.length ? blocks : [cssText];
 }
 
-/* ---------- PANELS ---------- */
-
-function renderPanels() {
-  stack.innerHTML = "";
-
-  const types = ["html", "css", "js", "svg"].filter(t => panelStore[t]);
-
-  types.forEach((type, i) => {
-    const panel = document.createElement("div");
-    panel.className = `flat-panel panel-${type}`;
-
-    panel.innerHTML = `
-      <div class="panel-label">${type.toUpperCase()}</div>
-      <pre class="panel-code">${escapeHTML(panelStore[type])}</pre>
-    `;
-
-    panel.style.left = `calc(50% + ${(i - (types.length - 1)/2) * 220}px)`;
-
-    panel.addEventListener("click", () => openPanel(type));
-
-    stack.appendChild(panel);
-  });
+function splitBasicBlocks(text) {
+  return text
+    .split(/\n\s*\n/g)
+    .map(block => block.trim())
+    .filter(Boolean);
 }
 
-/* ---------- OPEN ---------- */
+function getBlocksForPart(part) {
+  if (part.type === "css") return splitCssBlocks(part.content);
+  return splitBasicBlocks(part.content);
+}
 
-function openPanel(type) {
+function renderSeparatedBlocks(text) {
+  const parts = splitCode(text);
+
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
-  const content = panelStore[type];
+  codeView.innerHTML = parts.map(part => {
+    const blocks = getBlocksForPart(part);
 
-  codeView.innerHTML = content
-    .split(/\n\s*\n/)
-    .map((block, i) => `
-      <div class="code-block color-${i % 4}">
-        <pre>${escapeHTML(block)}</pre>
-      </div>
-    `)
-    .join("");
+    return `
+      <div class="type-label ${part.type}-label">${part.type.toUpperCase()}</div>
+      ${blocks.map(block => `
+        <div class="code-block type-${part.type}">
+          <pre>${escapeHTML(block)}</pre>
+        </div>
+      `).join("")}
+    `;
+  }).join("");
 }
-
-/* ---------- UTIL ---------- */
 
 function escapeHTML(text) {
   return text
@@ -128,9 +133,9 @@ function escapeHTML(text) {
     .replaceAll(">", "&gt;");
 }
 
-/* ---------- INIT ---------- */
-
 function startDefaultCanvas() {
+  codeView.classList.add("hidden");
+  scene.classList.remove("hidden");
   buildStartUI();
 }
 
