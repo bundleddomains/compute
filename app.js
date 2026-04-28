@@ -4,8 +4,7 @@ const status = document.getElementById("status");
 const codeView = document.getElementById("codeView");
 
 let state = "start";
-let fileText = "";
-let snipText = "";
+let pastedText = "";
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -17,14 +16,10 @@ function buildStartUI() {
     Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
-  const mainBtn = document.createElement("button");
-  mainBtn.className = "start-button main-button";
-  mainBtn.textContent = "REPLACE & ERASE";
-
-  mainBtn.addEventListener("click", activateMode);
+  const mainBox = makeMainPasteBox();
 
   stack.appendChild(startMessage);
-  stack.appendChild(mainBtn);
+  stack.appendChild(mainBox);
 }
 
 function escapeHTML(text) {
@@ -34,81 +29,85 @@ function escapeHTML(text) {
     .replaceAll(">", "&gt;");
 }
 
-function formatCodeBlocks(text) {
-  const parts = text.split("}");
+function detectParts(text) {
+  const parts = [];
 
-  return parts
-    .map(part => part.trim())
-    .filter(Boolean)
-    .map((part, i) => {
-      return `
-        <div class="code-block ${i % 2 ? "alt" : ""}">
-${escapeHTML(part + "}")}
-        </div>
-      `;
-    })
-    .join("");
+  const styleMatches = [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)];
+  const scriptMatches = [...text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)];
+  const svgMatches = [...text.matchAll(/<svg[\s\S]*?<\/svg>/gi)];
+
+  let html = text;
+
+  styleMatches.forEach(match => {
+    parts.push({ type: "CSS", content: match[1].trim() });
+    html = html.replace(match[0], "");
+  });
+
+  scriptMatches.forEach(match => {
+    parts.push({ type: "JS", content: match[1].trim() });
+    html = html.replace(match[0], "");
+  });
+
+  svgMatches.forEach(match => {
+    parts.push({ type: "SVG", content: match[0].trim() });
+    html = html.replace(match[0], "");
+  });
+
+  html = html.trim();
+
+  if (html) {
+    parts.unshift({ type: "HTML", content: html });
+  }
+
+  return parts;
 }
 
-function makeCodeTile(text, type) {
+function makePartTile(part, index) {
   const tile = document.createElement("div");
-  tile.className = `tool-button expanded ${type.toLowerCase()}-button code-tile`;
-  tile.innerHTML = formatCodeBlocks(text);
+  tile.className = `part-tile part-${part.type.toLowerCase()}`;
+
+  tile.innerHTML = `
+    <div class="part-label">${part.type}</div>
+    <pre class="part-code">${escapeHTML(part.content)}</pre>
+  `;
+
+  tile.style.left = `calc(50% + ${(index - 1.5) * 118}px)`;
+
   return tile;
 }
 
-function makePasteBox(label, type) {
+function renderDetectedParts(text) {
+  stack.innerHTML = "";
+
+  const parts = detectParts(text);
+
+  parts.forEach((part, index) => {
+    stack.appendChild(makePartTile(part, index));
+  });
+}
+
+function makeMainPasteBox() {
   const box = document.createElement("textarea");
-  box.className = `tool-button ${type.toLowerCase()}-button`;
-  box.value = label;
+  box.className = "start-button main-button main-paste";
+  box.value = "REPLACE & ERASE";
+
   box.spellcheck = false;
   box.autocapitalize = "off";
   box.autocomplete = "off";
   box.autocorrect = "off";
-  box.readOnly = false;
 
   box.addEventListener("focus", () => {
-    if (!box.classList.contains("expanded")) {
-      box.value = label;
-      box.setSelectionRange(0, box.value.length);
-    }
+    box.setSelectionRange(0, box.value.length);
   });
 
   box.addEventListener("paste", (e) => {
     e.preventDefault();
 
-    const pasted = (e.clipboardData || window.clipboardData).getData("text");
-
-    if (type === "FILE") {
-      fileText = pasted;
-    }
-
-    if (type === "SNIP") {
-      snipText = pasted;
-    }
-
-    const tile = makeCodeTile(pasted, type);
-    box.replaceWith(tile);
+    pastedText = (e.clipboardData || window.clipboardData).getData("text");
+    renderDetectedParts(pastedText);
   });
 
   return box;
-}
-
-function activateMode() {
-  state = "active";
-  stack.innerHTML = "";
-
-  const fileButton = makePasteBox("FILE", "FILE");
-
-  const amp = document.createElement("div");
-  amp.className = "start-amp";
-  amp.textContent = "&";
-
-  const snipButton = makePasteBox("SNIP", "SNIP");
-
-  stack.appendChild(fileButton);
-  stack.appendChild(amp);
-  stack.appendChild(snipButton);
 }
 
 function startDefaultCanvas() {
