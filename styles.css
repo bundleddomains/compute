@@ -183,42 +183,44 @@ body {
   left: 50%;
 }
 
+/* ---------- EXPANDED CODE TILES ---------- */
+
 .tool-button.expanded {
-  width: min(82vw, 760px);
-  min-height: 112px;
+  width: min(38vw, 210px);
+  min-height: 58vh;
   max-height: 72vh;
   height: auto;
 
-  line-height: 1.45;
+  line-height: 1.25;
   text-align: left;
 
-  padding: 18px 20px;
-  white-space: pre-wrap;
-  word-break: break-word;
+  padding: 14px 12px;
+  white-space: pre;
+  word-break: normal;
 
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
 
-  background: rgba(255,255,255,0.72);
-  border-radius: 22px;
+  background: rgba(255,255,255,0.54);
+  border-radius: 26px;
 
   overflow: auto;
   resize: none;
   cursor: default;
 
   box-shadow:
-    0 18px 40px rgba(0,0,0,0.14),
+    0 18px 40px rgba(0,0,0,0.12),
     inset 0 0 0 1px rgba(255,255,255,0.45);
 }
 
 .tool-button.expanded.file-button {
-  left: 30%;
+  left: 27%;
 }
 
 .tool-button.expanded.snip-button {
-  left: 70%;
+  left: 73%;
 }
 
 .tool-button::selection {
