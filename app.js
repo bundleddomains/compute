@@ -38,15 +38,34 @@ function buildStartUI() {
   stack.appendChild(eraseBtn);
 }
 
-function autoGrow(box) {
-  box.style.height = "auto";
+function escapeHTML(text) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
 
-  const idealHeight = Math.min(
-    box.scrollHeight,
-    window.innerHeight * 0.72
-  );
+function formatCodeBlocks(text) {
+  const parts = text.split("}");
 
-  box.style.height = idealHeight + "px";
+  return parts
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map((part, i) => {
+      return `
+        <div class="code-block ${i % 2 ? "alt" : ""}">
+${escapeHTML(part + "}")}
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function makeCodeTile(text, type) {
+  const tile = document.createElement("div");
+  tile.className = `tool-button expanded ${type.toLowerCase()}-button code-tile`;
+  tile.innerHTML = formatCodeBlocks(text);
+  return tile;
 }
 
 function eraseToFileMode() {
@@ -100,25 +119,8 @@ function makePasteBox(label, type) {
       snipText = pasted;
     }
 
-    box.value = pasted;
-    box.classList.add("expanded");
-
-    requestAnimationFrame(() => {
-      autoGrow(box);
-      box.blur();
-    });
-  });
-
-  box.addEventListener("input", () => {
-    autoGrow(box);
-
-    if (type === "FILE") {
-      fileText = box.value;
-    }
-
-    if (type === "SNIP") {
-      snipText = box.value;
-    }
+    const tile = makeCodeTile(pasted, type);
+    box.replaceWith(tile);
   });
 
   return box;
