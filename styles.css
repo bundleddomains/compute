@@ -146,10 +146,12 @@ body {
   border: 1px solid rgba(120,120,120,0.08);
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   cursor: pointer;
+  touch-action: none;
   transition:
     outline 0.16s ease,
     box-shadow 0.16s ease,
-    transform 0.16s ease;
+    transform 0.16s ease,
+    opacity 0.16s ease;
 }
 
 .code-block:last-child {
@@ -174,6 +176,18 @@ body {
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.75),
     0 10px 24px rgba(0,0,0,0.14);
+}
+
+/* ---------- DRAG / ERASE ---------- */
+
+.code-block.dragging-block {
+  transition: none;
+  z-index: 20;
+}
+
+.code-block.erasing-block {
+  opacity: 0;
+  transform: scale(0.94);
 }
 
 /* ---------- TYPE COLORS ---------- */
