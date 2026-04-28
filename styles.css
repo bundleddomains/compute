@@ -223,6 +223,23 @@ body {
   left: 73%;
 }
 
+/* ---------- SOFT CODE BLOCKS ---------- */
+
+.code-tile {
+  line-height: 1.2;
+}
+
+.code-block {
+  padding: 6px 6px;
+  border-radius: 9px;
+  margin-bottom: 5px;
+  background: rgba(255, 216, 77, 0.18);
+}
+
+.code-block.alt {
+  background: rgba(64, 224, 208, 0.16);
+}
+
 .tool-button::selection {
   background: transparent;
 }
