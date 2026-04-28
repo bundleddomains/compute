@@ -106,6 +106,16 @@ function getBlocksForPart(part) {
   return splitBasicBlocks(part.content);
 }
 
+function enableBlockSelection() {
+  const blocks = [...codeView.querySelectorAll(".code-block")];
+
+  blocks.forEach((block) => {
+    block.addEventListener("click", () => {
+      block.classList.toggle("selected-block");
+    });
+  });
+}
+
 function renderSeparatedBlocks(text) {
   const parts = splitCode(text);
 
@@ -124,6 +134,8 @@ function renderSeparatedBlocks(text) {
       `).join("")}
     `;
   }).join("");
+
+  enableBlockSelection();
 }
 
 function escapeHTML(text) {
