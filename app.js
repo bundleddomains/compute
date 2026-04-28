@@ -190,6 +190,8 @@ function enableBlockSelectionAndErase() {
       dx = e.clientX - startX;
       dy = e.clientY - startY;
 
+      if (!block.classList.contains("selected-block")) return;
+
       if (Math.hypot(dx, dy) > 8) {
         moved = true;
         clearHoldTimer();
