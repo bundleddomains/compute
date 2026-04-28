@@ -106,12 +106,73 @@ function getBlocksForPart(part) {
   return splitBasicBlocks(part.content);
 }
 
-function enableBlockSelection() {
+function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
   blocks.forEach((block) => {
-    block.addEventListener("click", () => {
-      block.classList.toggle("selected-block");
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let dy = 0;
+    let dragging = false;
+    let moved = false;
+
+    block.addEventListener("pointerdown", (e) => {
+      startX = e.clientX;
+      startY = e.clientY;
+      dx = 0;
+      dy = 0;
+      dragging = true;
+      moved = false;
+
+      block.setPointerCapture(e.pointerId);
+    });
+
+    block.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
+
+      if (Math.hypot(dx, dy) > 8) {
+        moved = true;
+        block.classList.add("dragging-block");
+        block.style.transform = `translate(${dx}px, ${dy}px)`;
+        block.style.opacity = "0.82";
+      }
+    });
+
+    block.addEventListener("pointerup", () => {
+      if (!dragging) return;
+      dragging = false;
+
+      const distance = Math.hypot(dx, dy);
+      const eraseThreshold = 120;
+
+      if (moved && distance > eraseThreshold) {
+        block.classList.add("erasing-block");
+
+        setTimeout(() => {
+          block.remove();
+        }, 180);
+
+        return;
+      }
+
+      if (!moved) {
+        block.classList.toggle("selected-block");
+      }
+
+      block.classList.remove("dragging-block");
+      block.style.transform = "";
+      block.style.opacity = "";
+    });
+
+    block.addEventListener("pointercancel", () => {
+      dragging = false;
+      block.classList.remove("dragging-block");
+      block.style.transform = "";
+      block.style.opacity = "";
     });
   });
 }
@@ -135,7 +196,7 @@ function renderSeparatedBlocks(text) {
     `;
   }).join("");
 
-  enableBlockSelection();
+  enableBlockSelectionAndErase();
 }
 
 function escapeHTML(text) {
