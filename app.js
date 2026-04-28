@@ -17,25 +17,14 @@ function buildStartUI() {
     Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
-  const replaceBtn = document.createElement("button");
-  replaceBtn.className = "start-button replace-button";
-  replaceBtn.textContent = "REPLACE";
+  const mainBtn = document.createElement("button");
+  mainBtn.className = "start-button main-button";
+  mainBtn.textContent = "REPLACE & ERASE";
 
-  const eraseBtn = document.createElement("button");
-  eraseBtn.className = "start-button erase-button";
-  eraseBtn.textContent = "ERASE";
-
-  const amp = document.createElement("div");
-  amp.className = "start-amp";
-  amp.textContent = "&";
-
-  replaceBtn.addEventListener("click", activateMode);
-  eraseBtn.addEventListener("click", eraseToFileMode);
+  mainBtn.addEventListener("click", activateMode);
 
   stack.appendChild(startMessage);
-  stack.appendChild(replaceBtn);
-  stack.appendChild(amp);
-  stack.appendChild(eraseBtn);
+  stack.appendChild(mainBtn);
 }
 
 function escapeHTML(text) {
@@ -66,27 +55,6 @@ function makeCodeTile(text, type) {
   tile.className = `tool-button expanded ${type.toLowerCase()}-button code-tile`;
   tile.innerHTML = formatCodeBlocks(text);
   return tile;
-}
-
-function eraseToFileMode() {
-  state = "file";
-
-  const replaceBtn = stack.querySelector(".replace-button");
-  const eraseBtn = stack.querySelector(".erase-button");
-  const amp = stack.querySelector(".start-amp");
-
-  const fileBox = makePasteBox("FILE", "FILE");
-  fileBox.className = "start-button tool-button file-button";
-  fileBox.value = "FILE";
-
-  replaceBtn.replaceWith(fileBox);
-
-  eraseBtn.classList.add("fade-away");
-  amp.classList.add("fade-away");
-
-  requestAnimationFrame(() => {
-    fileBox.classList.add("file-center", "move-center");
-  });
 }
 
 function makePasteBox(label, type) {
