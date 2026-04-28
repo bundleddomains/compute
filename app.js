@@ -8,7 +8,7 @@ function buildStartUI() {
   const startMessage = document.createElement("div");
   startMessage.className = "start-message";
   startMessage.innerHTML = `
-    Replace & Erase;<br>
+    Replace and Erase;<br>
     Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
@@ -21,7 +21,7 @@ function buildStartUI() {
 function makeMainPasteBox() {
   const box = document.createElement("textarea");
   box.className = "start-button main-button main-paste";
-  box.value = "REPLACE & ERASE";
+  box.value = "REPLACE AND ERASE";
 
   box.spellcheck = false;
   box.autocapitalize = "off";
@@ -106,6 +106,41 @@ function getBlocksForPart(part) {
   return splitBasicBlocks(part.content);
 }
 
+function convertBlockToTextarea(block) {
+  if (block.classList.contains("editing-block")) return;
+
+  const pre = block.querySelector("pre");
+  if (!pre) return;
+
+  const text = pre.textContent;
+
+  block.classList.add("editing-block");
+  block.innerHTML = "";
+
+  const editor = document.createElement("textarea");
+  editor.className = "block-editor";
+  editor.value = text;
+
+  editor.spellcheck = false;
+  editor.autocapitalize = "off";
+  editor.autocomplete = "off";
+  editor.autocorrect = "off";
+
+  block.appendChild(editor);
+
+  requestAnimationFrame(() => {
+    editor.focus();
+    editor.setSelectionRange(0, editor.value.length);
+  });
+
+  editor.addEventListener("blur", () => {
+    const newText = editor.value;
+
+    block.classList.remove("editing-block");
+    block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
+  });
+}
+
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
@@ -126,19 +161,9 @@ function enableBlockSelectionAndErase() {
       }
     }
 
-    function selectBlockText() {
-      const pre = block.querySelector("pre");
-      if (!pre) return;
-
-      const range = document.createRange();
-      range.selectNodeContents(pre);
-
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
     block.addEventListener("pointerdown", (e) => {
+      if (block.classList.contains("editing-block")) return;
+
       startX = e.clientX;
       startY = e.clientY;
       dx = 0;
@@ -154,13 +179,13 @@ function enableBlockSelectionAndErase() {
       if (block.classList.contains("selected-block")) {
         holdTimer = setTimeout(() => {
           holdActivated = true;
-          selectBlockText();
+          convertBlockToTextarea(block);
         }, 520);
       }
     });
 
     block.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
+      if (!dragging || block.classList.contains("editing-block")) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
