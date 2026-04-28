@@ -19,13 +19,13 @@ body {
   position: absolute;
   inset: 24px;
   margin: 0;
-  padding: 22px;
+  padding: 18px;
   box-sizing: border-box;
   overflow: auto;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.55;
   color: #2f2f2f;
   border: 1px solid rgba(120,120,120,0.12);
@@ -40,6 +40,7 @@ body {
   position: absolute;
   inset: 0;
   perspective: 1400px;
+  touch-action: pan-y;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,6 +53,7 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  transform-style: preserve-3d;
 }
 
 /* ---------- TOP MESSAGE ---------- */
@@ -71,24 +73,21 @@ body {
   user-select: none;
 }
 
-/* ---------- START BUTTONS ---------- */
+/* ---------- START BUTTON ---------- */
 
 .start-button {
   position: absolute;
   top: 50%;
-  width: 112px;
-  height: 112px;
   transform: translate(-50%, -50%);
   border: 2px solid black;
-  border-radius: 14px;
   background: white;
   color: black;
   font: inherit;
-  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.04em;
   cursor: pointer;
   box-sizing: border-box;
+  outline: none;
   transition:
     left 0.42s ease,
     width 0.42s ease,
@@ -109,162 +108,122 @@ body {
   padding: 0 18px;
 }
 
-.replace-button {
-  left: 30%;
-}
-
-.erase-button {
-  left: 70%;
-}
-
-.start-amp {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 28px;
-  font-weight: 600;
-  color: black;
-  pointer-events: none;
-  transition:
-    opacity 0.34s ease,
-    transform 0.34s ease;
-}
-
-/* ---------- ERASE START ANIMATION ---------- */
-
-.fade-away {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.92);
-  pointer-events: none;
-}
-
-.move-center {
-  left: 50%;
-}
-
-/* ---------- FILE / SNIP BUTTONS ---------- */
-
-.tool-button {
-  position: absolute;
-  top: 50%;
-  width: 112px;
-  height: 112px;
-  transform: translate(-50%, -50%);
-  border: 2px solid black;
-  border-radius: 14px;
-  background: white;
-  color: black;
-  font: inherit;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-align: center;
+.main-paste {
   resize: none;
-  overflow: hidden;
-  cursor: pointer;
-  box-sizing: border-box;
-  outline: none;
-  padding: 0;
-  line-height: 112px;
+  text-align: center;
   caret-color: transparent;
+  overflow: hidden;
   appearance: none;
   -webkit-appearance: none;
-  transition:
-    left 0.42s ease,
-    width 0.42s ease,
-    height 0.42s ease,
-    opacity 0.34s ease,
-    transform 0.34s ease,
-    border-radius 0.34s ease,
-    box-shadow 0.34s ease,
-    background 0.34s ease;
 }
 
-.file-button {
-  left: 30%;
-}
+/* ---------- REVOLVING PANELS ---------- */
 
-.snip-button {
-  left: 70%;
-}
-
-.file-center {
+.panel {
+  position: absolute;
+  top: 50%;
   left: 50%;
+  width: 128px;
+  height: 196px;
+  border-radius: 20px;
+  border: 1px solid rgba(120,120,120,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #333;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transition:
+    transform 0.18s linear,
+    opacity 0.18s linear,
+    filter 0.18s linear,
+    box-shadow 0.18s linear,
+    background 0.18s linear,
+    border-color 0.18s linear;
+  box-sizing: border-box;
+  overflow: hidden;
+  will-change: transform, opacity, filter;
 }
 
-/* ---------- EXPANDED CODE TILES ---------- */
+.panel-label {
+  pointer-events: none;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
 
-.tool-button.expanded {
-  width: min(38vw, 210px);
-  min-height: 58vh;
-  max-height: 72vh;
-  height: auto;
-
-  line-height: 1.25;
-  text-align: left;
-
-  padding: 14px 12px;
-  white-space: pre;
-  word-break: normal;
-
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-
-  background: rgba(255,255,255,0.54);
-  border-radius: 26px;
-
-  overflow: auto;
-  resize: none;
-  cursor: default;
-
+.panel.active-front {
+  border-color: rgba(110, 44, 58, 0.42);
   box-shadow:
-    0 18px 40px rgba(0,0,0,0.12),
-    inset 0 0 0 1px rgba(255,255,255,0.45);
+    0 0 0 2px rgba(110, 44, 58, 0.08),
+    0 14px 30px rgba(0,0,0,0.10);
 }
 
-.tool-button.expanded.file-button {
-  left: 27%;
+.panel-html .panel-label {
+  color: rgba(120, 90, 10, 0.9);
 }
 
-.tool-button.expanded.snip-button {
-  left: 73%;
+.panel-css .panel-label {
+  color: rgba(0, 115, 105, 0.9);
 }
 
-/* ---------- SOFT CODE BLOCKS ---------- */
-
-.code-tile {
-  line-height: 1.2;
+.panel-js .panel-label {
+  color: rgba(130, 82, 0, 0.9);
 }
+
+.panel-svg .panel-label {
+  color: rgba(90, 60, 150, 0.9);
+}
+
+/* ---------- OPENED CODE BLOCKS ---------- */
 
 .code-block {
-  padding: 6px 6px;
-  border-radius: 9px;
-  margin-bottom: 5px;
-  background: rgba(255, 216, 77, 0.18);
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(120,120,120,0.08);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
-.code-block.alt {
-  background: rgba(64, 224, 208, 0.16);
+.code-block:last-child {
+  margin-bottom: 0;
 }
 
-.tool-button::selection {
+.code-block pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
   background: transparent;
 }
 
-.tool-button::-webkit-scrollbar {
-  display: none;
+.code-block.color-0 {
+  background: rgba(255, 216, 77, 0.18);
+  border-color: rgba(255, 216, 77, 0.26);
 }
 
-/* ---------- STATUS ---------- */
+.code-block.color-1 {
+  background: rgba(64, 224, 208, 0.16);
+  border-color: rgba(64, 224, 208, 0.26);
+}
+
+.code-block.color-2 {
+  background: rgba(242, 179, 122, 0.16);
+  border-color: rgba(242, 179, 122, 0.28);
+}
+
+.code-block.color-3 {
+  background: rgba(190, 160, 255, 0.16);
+  border-color: rgba(190, 160, 255, 0.26);
+}
+
+/* ---------- STATUS / UTIL ---------- */
 
 .status {
   display: none;
 }
-
-/* ---------- UTIL ---------- */
 
 .hidden {
   display: none;
