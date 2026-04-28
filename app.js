@@ -116,6 +116,27 @@ function enableBlockSelectionAndErase() {
     let dy = 0;
     let dragging = false;
     let moved = false;
+    let holdTimer = null;
+    let holdActivated = false;
+
+    function clearHoldTimer() {
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+    }
+
+    function selectBlockText() {
+      const pre = block.querySelector("pre");
+      if (!pre) return;
+
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
 
     block.addEventListener("pointerdown", (e) => {
       startX = e.clientX;
@@ -124,8 +145,18 @@ function enableBlockSelectionAndErase() {
       dy = 0;
       dragging = true;
       moved = false;
+      holdActivated = false;
 
       block.setPointerCapture(e.pointerId);
+
+      clearHoldTimer();
+
+      if (block.classList.contains("selected-block")) {
+        holdTimer = setTimeout(() => {
+          holdActivated = true;
+          selectBlockText();
+        }, 520);
+      }
     });
 
     block.addEventListener("pointermove", (e) => {
@@ -136,6 +167,8 @@ function enableBlockSelectionAndErase() {
 
       if (Math.hypot(dx, dy) > 8) {
         moved = true;
+        clearHoldTimer();
+
         block.classList.add("dragging-block");
         block.style.transform = `translate(${dx}px, ${dy}px)`;
         block.style.opacity = "0.82";
@@ -145,9 +178,17 @@ function enableBlockSelectionAndErase() {
     block.addEventListener("pointerup", () => {
       if (!dragging) return;
       dragging = false;
+      clearHoldTimer();
 
       const distance = Math.hypot(dx, dy);
       const eraseThreshold = 120;
+
+      if (holdActivated) {
+        block.classList.remove("dragging-block");
+        block.style.transform = "";
+        block.style.opacity = "";
+        return;
+      }
 
       if (moved && distance > eraseThreshold) {
         block.classList.add("erasing-block");
@@ -170,6 +211,8 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointercancel", () => {
       dragging = false;
+      clearHoldTimer();
+
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
