@@ -1,4 +1,151 @@
-/* ---------- SELECTED BLOCK ---------- */
+body {
+  margin: 0;
+  background: #ece9e4;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.code-view {
+  position: absolute;
+  inset: 24px;
+  margin: 0;
+  padding: 18px;
+  box-sizing: border-box;
+  overflow: auto;
+  white-space: normal;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #2f2f2f;
+  border: 1px solid rgba(120,120,120,0.12);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.38);
+  z-index: 10;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  background: transparent;
+  overflow: hidden;
+}
+
+.stack {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.start-message {
+  position: absolute;
+  top: 6%;
+  left: 6%;
+  transform: rotate(-8deg);
+  max-width: 320px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  color: rgba(0,0,0,0.22);
+  pointer-events: none;
+  user-select: none;
+}
+
+.start-button {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid black;
+  background: white;
+  color: black;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-sizing: border-box;
+  outline: none;
+  transition:
+    width 0.42s ease,
+    height 0.42s ease,
+    transform 0.34s ease,
+    border-radius 0.34s ease,
+    box-shadow 0.34s ease;
+}
+
+.main-button {
+  left: 50%;
+  width: 180px;
+  height: 120px;
+  font-size: 16px;
+  border-radius: 18px;
+  line-height: 1.15;
+  padding: 0 18px;
+}
+
+.main-paste {
+  resize: none;
+  text-align: center;
+  caret-color: transparent;
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.type-label {
+  margin: 0 0 10px 4px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.html-label { color: rgba(120, 90, 10, 0.9); }
+.css-label { color: rgba(0, 115, 105, 0.9); }
+.js-label { color: rgba(130, 82, 0, 0.9); }
+.svg-label { color: rgba(90, 60, 150, 0.9); }
+
+.code-block {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(120,120,120,0.08);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  cursor: pointer;
+  touch-action: none;
+  transition:
+    outline 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.code-block:last-child {
+  margin-bottom: 0;
+}
+
+.code-block pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+}
 
 .code-block.selected-block {
   outline: 3px solid rgba(0,0,0,0.72);
@@ -7,8 +154,6 @@
     0 0 0 1px rgba(255,255,255,0.75),
     0 10px 24px rgba(0,0,0,0.14);
 }
-
-/* ---------- EDITING BLOCK (REPLACE MODE) ---------- */
 
 .code-block.editing-block {
   outline: 3px dashed rgba(0,0,0,0.72);
@@ -19,12 +164,20 @@
   transform: scale(1.02);
 }
 
-/* prevent conflicts when editing */
 .code-block.editing-block.selected-block {
   outline: 3px dashed rgba(0,0,0,0.72);
 }
 
-/* ---------- BLOCK EDITOR ---------- */
+.code-block.dragging-block {
+  transition: none;
+  z-index: 20;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+}
+
+.code-block.erasing-block {
+  opacity: 0;
+  transform: scale(0.92);
+}
 
 .block-editor {
   width: 100%;
@@ -38,26 +191,37 @@
   line-height: inherit;
   white-space: pre-wrap;
   box-sizing: border-box;
-
-  /* smoother typing feel */
   caret-color: black;
 }
 
-/* subtle focus feel */
 .block-editor:focus {
   outline: none;
 }
 
-/* ---------- DRAG / ERASE (slightly smoother) ---------- */
-
-.code-block.dragging-block {
-  transition: none;
-  z-index: 20;
-  box-shadow:
-    0 18px 40px rgba(0,0,0,0.18);
+.code-block.type-html {
+  background: rgba(255, 216, 77, 0.18);
+  border-color: rgba(255, 216, 77, 0.26);
 }
 
-.code-block.erasing-block {
-  opacity: 0;
-  transform: scale(0.92);
+.code-block.type-css {
+  background: rgba(64, 224, 208, 0.16);
+  border-color: rgba(64, 224, 208, 0.26);
+}
+
+.code-block.type-js {
+  background: rgba(242, 179, 122, 0.16);
+  border-color: rgba(242, 179, 122, 0.28);
+}
+
+.code-block.type-svg {
+  background: rgba(190, 160, 255, 0.16);
+  border-color: rgba(190, 160, 255, 0.26);
+}
+
+.status {
+  display: none;
+}
+
+.hidden {
+  display: none;
 }
