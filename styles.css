@@ -247,9 +247,10 @@ body.unified-mode .code-view {
   white-space: pre-wrap;
 }
 
-body.unified-mode .code-section {
-  margin: 0;
-  padding: 0;
+body.unified-mode .code-section,
+body.unified-mode .section-body {
+  margin: 0 !important;
+  padding: 0 !important;
   opacity: 1;
   transform: none;
 }
@@ -259,10 +260,11 @@ body.unified-mode .section-body {
 }
 
 body.unified-mode .code-block {
+  display: contents;
   width: 100%;
   max-width: none;
-  margin: 0;
-  padding: 0;
+  margin: 0 !important;
+  padding: 0 !important;
   border: 0;
   border-radius: 0;
   outline: none;
@@ -272,7 +274,10 @@ body.unified-mode .code-block {
   transform: none;
 }
 
-body.unified-mode .code-block pre {
+body.unified-mode .code-block pre,
+body.unified-mode pre {
+  margin: 0;
+  display: inline;
   white-space: pre-wrap;
 }
 
@@ -288,7 +293,7 @@ body.unified-mode .code-block.selected-block {
 
 body.unified-mode .code-block + .code-block,
 body.unified-mode .code-section + .code-section {
-  margin-top: 0;
+  margin-top: 0 !important;
 }
 
 .type-toolbar {
