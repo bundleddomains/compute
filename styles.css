@@ -6,6 +6,10 @@ body {
   overflow: hidden;
 }
 
+body.unified-mode {
+  overflow: hidden;
+}
+
 .canvas {
   width: 100vw;
   height: 100vh;
@@ -19,7 +23,7 @@ body {
   position: absolute;
   inset: 10px;
   margin: 0;
-  padding: 28px 38px;
+  padding: 28px 38px 96px;
   box-sizing: border-box;
   overflow: auto;
   white-space: normal;
@@ -167,7 +171,12 @@ body {
     transform 0.16s ease,
     opacity 0.16s ease,
     background 0.16s ease,
-    border-color 0.16s ease;
+    border-color 0.16s ease,
+    width 0.22s ease,
+    max-width 0.22s ease,
+    margin 0.22s ease,
+    padding 0.22s ease,
+    border-radius 0.22s ease;
 }
 
 .code-block:last-child {
@@ -232,6 +241,56 @@ body {
   border-color: rgba(190, 160, 255, 0.26);
 }
 
+/* ---------- UNIFIED FULL FILE MODE ---------- */
+
+body.unified-mode .code-view {
+  white-space: pre-wrap;
+}
+
+body.unified-mode .code-section {
+  margin: 0;
+  padding: 0;
+  opacity: 1;
+  transform: none;
+}
+
+body.unified-mode .section-body {
+  display: block;
+}
+
+body.unified-mode .code-block {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  cursor: text;
+  transform: none;
+}
+
+body.unified-mode .code-block pre {
+  white-space: pre-wrap;
+}
+
+body.unified-mode .code-block.active-type,
+body.unified-mode .code-block.dimmed-type,
+body.unified-mode .code-block.selected-block {
+  opacity: 1;
+  outline: none;
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.unified-mode .code-block + .code-block,
+body.unified-mode .code-section + .code-section {
+  margin-top: 0;
+}
+
 .type-toolbar {
   position: fixed;
   left: 50%;
@@ -245,6 +304,7 @@ body {
   background: rgba(255,255,255,0.72);
   border: 1px solid rgba(120,120,120,0.14);
   box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+  touch-action: pan-x;
 }
 
 .type-tool {
@@ -263,6 +323,16 @@ body {
 
 .type-tool.active-tool {
   box-shadow: 0 0 0 2px black;
+}
+
+body.unified-mode .type-tool.active-tool {
+  box-shadow: none;
+}
+
+body.unified-mode .type-toolbar {
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,0.18),
+    0 10px 26px rgba(0,0,0,0.10);
 }
 
 .hidden {
