@@ -106,6 +106,23 @@ function getBlocksForPart(part) {
   return splitBasicBlocks(part.content);
 }
 
+function clearTextSelection() {
+  const selection = window.getSelection();
+  if (selection) selection.removeAllRanges();
+}
+
+function selectBlockText(block) {
+  const pre = block.querySelector("pre");
+  if (!pre) return;
+
+  const range = document.createRange();
+  range.selectNodeContents(pre);
+
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 function convertBlockToTextarea(block) {
   if (block.classList.contains("editing-block")) return;
 
@@ -222,8 +239,17 @@ function enableBlockSelectionAndErase() {
 
       if (!wasDragging) {
         if (!moved) {
+          const isNowSelected = !block.classList.contains("selected-block");
+
           block.classList.toggle("selected-block");
+
+          if (isNowSelected) {
+            selectBlockText(block);
+          } else {
+            clearTextSelection();
+          }
         }
+
         return;
       }
 
@@ -241,7 +267,15 @@ function enableBlockSelectionAndErase() {
       }
 
       if (!moved) {
+        const isNowSelected = !block.classList.contains("selected-block");
+
         block.classList.toggle("selected-block");
+
+        if (isNowSelected) {
+          selectBlockText(block);
+        } else {
+          clearTextSelection();
+        }
       }
 
       block.classList.remove("dragging-block");
