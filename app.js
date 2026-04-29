@@ -2,6 +2,9 @@ const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 
+let activeSectionTypes = [];
+let collapsedSections = {};
+
 function buildStartUI() {
   stack.innerHTML = "";
 
@@ -294,26 +297,103 @@ function enableBlockSelectionAndErase() {
   });
 }
 
+function enableSectionConfirm() {
+  const sections = [...codeView.querySelectorAll(".code-section")];
+
+  sections.forEach((section) => {
+    const label = section.querySelector(".type-label");
+    const type = section.dataset.type;
+
+    label.addEventListener("click", () => {
+      collapsedSections[type] = !collapsedSections[type];
+      section.classList.toggle("collapsed-section", collapsedSections[type]);
+
+      checkAllSectionsConfirmed();
+    });
+  });
+}
+
+function getSectionText(type) {
+  const section = codeView.querySelector(`.code-section[data-type="${type}"]`);
+  if (!section) return "";
+
+  return [...section.querySelectorAll(".code-block pre")]
+    .map(pre => pre.textContent.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function checkAllSectionsConfirmed() {
+  const allConfirmed = activeSectionTypes.every(type => collapsedSections[type]);
+
+  if (allConfirmed) {
+    renderFinalOutput();
+  }
+}
+
+function renderFinalOutput() {
+  const html = getSectionText("html");
+  const css = getSectionText("css");
+  const js = getSectionText("js");
+  const svg = getSectionText("svg");
+
+  const finalFile = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+
+${svg}
+
+<script>
+${js}
+</script>
+</body>
+</html>`;
+
+  codeView.innerHTML = `
+    <div class="type-label final-label">FINAL FORM</div>
+    <div class="code-block type-html selected-block">
+      <pre>${escapeHTML(finalFile)}</pre>
+    </div>
+  `;
+}
+
 function renderSeparatedBlocks(text) {
   const parts = splitCode(text);
+
+  activeSectionTypes = parts.map(part => part.type);
+  collapsedSections = {};
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
   codeView.innerHTML = parts.map(part => {
     const blocks = getBlocksForPart(part);
+    collapsedSections[part.type] = false;
 
     return `
-      <div class="type-label ${part.type}-label">${part.type.toUpperCase()}</div>
-      ${blocks.map(block => `
-        <div class="code-block type-${part.type}">
-          <pre>${escapeHTML(block)}</pre>
+      <section class="code-section" data-type="${part.type}">
+        <div class="type-label ${part.type}-label">${part.type.toUpperCase()}</div>
+        <div class="section-body">
+          ${blocks.map(block => `
+            <div class="code-block type-${part.type}">
+              <pre>${escapeHTML(block)}</pre>
+            </div>
+          `).join("")}
         </div>
-      `).join("")}
+      </section>
     `;
   }).join("");
 
   enableBlockSelectionAndErase();
+  enableSectionConfirm();
 }
 
 function escapeHTML(text) {
