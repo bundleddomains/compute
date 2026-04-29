@@ -282,41 +282,37 @@ function enableSectionConfirm() {
 
   sections.forEach((section) => {
     const label = section.querySelector(".type-label");
-    const type = section.dataset.type;
+    const sectionId = section.dataset.sectionId;
 
     label.addEventListener("click", () => {
-      collapsedSections[type] = !collapsedSections[type];
-      section.classList.toggle("collapsed-section", collapsedSections[type]);
+      collapsedSections[sectionId] = !collapsedSections[sectionId];
+      section.classList.toggle("collapsed-section", collapsedSections[sectionId]);
     });
   });
 }
 
 function renderSeparatedBlocks(text) {
   const parts = splitCode(text);
-  const typesInOrder = [...new Set(parts.map(part => part.type))];
 
-  activeSectionTypes = typesInOrder;
+  activeSectionTypes = [];
   collapsedSections = {};
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
-  codeView.innerHTML = typesInOrder.map(type => {
-    const matchingParts = parts
-      .map((part, index) => ({ ...part, index }))
-      .filter(part => part.type === type);
+  codeView.innerHTML = parts.map((part, index) => {
+    const sectionId = `${part.type}-${index}`;
 
-    collapsedSections[type] = false;
+    activeSectionTypes.push(sectionId);
+    collapsedSections[sectionId] = false;
 
     return `
-      <section class="code-section" data-type="${type}">
-        <div class="type-label ${type}-label">${type.toUpperCase()}</div>
+      <section class="code-section" data-type="${part.type}" data-section-id="${sectionId}">
+        <div class="type-label ${part.type}-label">${part.type.toUpperCase()}</div>
         <div class="section-body">
-          ${matchingParts.map(part => `
-            <div class="code-block type-${part.type}" data-index="${part.index}">
-              <pre>${escapeHTML(part.content)}</pre>
-            </div>
-          `).join("")}
+          <div class="code-block type-${part.type}" data-index="${index}">
+            <pre>${escapeHTML(part.content)}</pre>
+          </div>
         </div>
       </section>
     `;
