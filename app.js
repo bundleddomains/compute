@@ -2,8 +2,7 @@ const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 
-let activeSectionTypes = [];
-let collapsedSections = {};
+let activeType = null;
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -141,6 +140,61 @@ function convertBlockToTextarea(block) {
   });
 }
 
+function getBlockType(block) {
+  if (block.classList.contains("type-html")) return "html";
+  if (block.classList.contains("type-css")) return "css";
+  if (block.classList.contains("type-js")) return "js";
+  if (block.classList.contains("type-svg")) return "svg";
+  return null;
+}
+
+function setActiveType(type) {
+  activeType = activeType === type ? null : type;
+
+  const blocks = [...codeView.querySelectorAll(".code-block")];
+  const buttons = [...document.querySelectorAll(".type-tool")];
+
+  buttons.forEach(button => {
+    button.classList.toggle("active-tool", button.dataset.type === activeType);
+  });
+
+  blocks.forEach(block => {
+    const blockType = getBlockType(block);
+
+    block.classList.remove("active-type", "dimmed-type");
+
+    if (!activeType) return;
+
+    if (blockType === activeType) {
+      block.classList.add("active-type");
+    } else {
+      block.classList.add("dimmed-type");
+    }
+  });
+
+  clearTextSelection();
+}
+
+function buildTypeToolbar() {
+  const bar = document.createElement("div");
+  bar.className = "type-toolbar";
+
+  ["html", "css", "js", "svg"].forEach(type => {
+    const button = document.createElement("button");
+    button.className = `type-tool type-tool-${type}`;
+    button.dataset.type = type;
+    button.textContent = type.toUpperCase();
+
+    button.addEventListener("click", () => {
+      setActiveType(type);
+    });
+
+    bar.appendChild(button);
+  });
+
+  codeView.appendChild(bar);
+}
+
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
@@ -161,8 +215,14 @@ function enableBlockSelectionAndErase() {
       }
     }
 
+    function blockIsActiveForEditing() {
+      if (!activeType) return true;
+      return getBlockType(block) === activeType;
+    }
+
     block.addEventListener("pointerdown", (e) => {
       if (block.classList.contains("editing-block")) return;
+      if (!blockIsActiveForEditing()) return;
 
       startX = e.clientX;
       startY = e.clientY;
@@ -192,7 +252,8 @@ function enableBlockSelectionAndErase() {
       if (
         !dragging ||
         block.classList.contains("editing-block") ||
-        block.classList.contains("selected-block")
+        block.classList.contains("selected-block") ||
+        !blockIsActiveForEditing()
       ) return;
 
       dx = e.clientX - startX;
@@ -209,6 +270,8 @@ function enableBlockSelectionAndErase() {
     });
 
     block.addEventListener("pointerup", () => {
+      if (!blockIsActiveForEditing()) return;
+
       const wasDragging = dragging;
       dragging = false;
       clearHoldTimer();
@@ -277,38 +340,17 @@ function enableBlockSelectionAndErase() {
   });
 }
 
-function enableSectionConfirm() {
-  const sections = [...codeView.querySelectorAll(".code-section")];
-
-  sections.forEach((section) => {
-    const label = section.querySelector(".type-label");
-    const sectionId = section.dataset.sectionId;
-
-    label.addEventListener("click", () => {
-      collapsedSections[sectionId] = !collapsedSections[sectionId];
-      section.classList.toggle("collapsed-section", collapsedSections[sectionId]);
-    });
-  });
-}
-
 function renderSeparatedBlocks(text) {
   const parts = splitCode(text);
 
-  activeSectionTypes = [];
-  collapsedSections = {};
+  activeType = null;
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
   codeView.innerHTML = parts.map((part, index) => {
-    const sectionId = `${part.type}-${index}`;
-
-    activeSectionTypes.push(sectionId);
-    collapsedSections[sectionId] = false;
-
     return `
-      <section class="code-section" data-type="${part.type}" data-section-id="${sectionId}">
-        <div class="type-label ${part.type}-label">${part.type.toUpperCase()}</div>
+      <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
             <pre>${escapeHTML(part.content)}</pre>
@@ -318,8 +360,8 @@ function renderSeparatedBlocks(text) {
     `;
   }).join("");
 
+  buildTypeToolbar();
   enableBlockSelectionAndErase();
-  enableSectionConfirm();
 }
 
 function escapeHTML(text) {
