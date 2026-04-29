@@ -149,6 +149,8 @@ function getBlockType(block) {
 }
 
 function setActiveType(type) {
+  document.body.classList.remove("unified-mode");
+
   activeType = activeType === type ? null : type;
 
   const blocks = [...codeView.querySelectorAll(".code-block")];
@@ -161,7 +163,7 @@ function setActiveType(type) {
   blocks.forEach(block => {
     const blockType = getBlockType(block);
 
-    block.classList.remove("active-type", "dimmed-type");
+    block.classList.remove("active-type", "dimmed-type", "selected-block");
 
     if (!activeType) return;
 
@@ -195,6 +197,52 @@ function buildTypeToolbar() {
   codeView.appendChild(bar);
 }
 
+function enableToolbarSwipe() {
+  const bar = document.querySelector(".type-toolbar");
+  if (!bar) return;
+
+  let startX = 0;
+  let dx = 0;
+  let dragging = false;
+
+  bar.addEventListener("pointerdown", (e) => {
+    startX = e.clientX;
+    dx = 0;
+    dragging = true;
+    bar.setPointerCapture(e.pointerId);
+  });
+
+  bar.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    dx = e.clientX - startX;
+  });
+
+  bar.addEventListener("pointerup", () => {
+    if (!dragging) return;
+    dragging = false;
+
+    if (Math.abs(dx) > 120) {
+      activeType = null;
+      document.body.classList.add("unified-mode");
+      clearTextSelection();
+
+      document.querySelectorAll(".type-tool").forEach(button => {
+        button.classList.remove("active-tool");
+      });
+
+      codeView.querySelectorAll(".code-block").forEach(block => {
+        block.classList.remove("active-type", "dimmed-type", "selected-block", "dragging-block");
+        block.style.transform = "";
+        block.style.opacity = "";
+      });
+    }
+  });
+
+  bar.addEventListener("pointercancel", () => {
+    dragging = false;
+  });
+}
+
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
@@ -216,6 +264,7 @@ function enableBlockSelectionAndErase() {
     }
 
     function blockIsActiveForEditing() {
+      if (document.body.classList.contains("unified-mode")) return false;
       if (!activeType) return true;
       return getBlockType(block) === activeType;
     }
@@ -344,6 +393,7 @@ function renderSeparatedBlocks(text) {
   const parts = splitCode(text);
 
   activeType = null;
+  document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
@@ -361,6 +411,7 @@ function renderSeparatedBlocks(text) {
   }).join("");
 
   buildTypeToolbar();
+  enableToolbarSwipe();
   enableBlockSelectionAndErase();
 }
 
@@ -374,6 +425,7 @@ function escapeHTML(text) {
 function startDefaultCanvas() {
   codeView.classList.add("hidden");
   scene.classList.remove("hidden");
+  document.body.classList.remove("unified-mode");
   buildStartUI();
 }
 
