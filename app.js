@@ -3,6 +3,7 @@ const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 
 let activeType = null;
+let currentParts = [];
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -37,7 +38,8 @@ function makeMainPasteBox() {
   box.addEventListener("paste", (e) => {
     e.preventDefault();
     const text = (e.clipboardData || window.clipboardData).getData("text");
-    renderSeparatedBlocks(text);
+    currentParts = splitCode(text);
+    renderBlockMode();
   });
 
   return box;
@@ -111,6 +113,7 @@ function convertBlockToTextarea(block) {
   const pre = block.querySelector("pre");
   if (!pre) return;
 
+  const index = Number(block.dataset.index);
   const text = pre.textContent;
 
   block.classList.add("editing-block");
@@ -135,6 +138,10 @@ function convertBlockToTextarea(block) {
   editor.addEventListener("blur", () => {
     const newText = editor.value;
 
+    if (currentParts[index]) {
+      currentParts[index].content = newText;
+    }
+
     block.classList.remove("editing-block");
     block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
   });
@@ -149,7 +156,11 @@ function getBlockType(block) {
 }
 
 function setActiveType(type) {
-  document.body.classList.remove("unified-mode");
+  if (document.body.classList.contains("unified-mode")) {
+    document.body.classList.remove("unified-mode");
+    activeType = null;
+    renderBlockMode();
+  }
 
   activeType = activeType === type ? null : type;
 
@@ -197,6 +208,36 @@ function buildTypeToolbar() {
   codeView.appendChild(bar);
 }
 
+function getUnifiedCleanText() {
+  let full = currentParts
+    .map(part => part.content.trim())
+    .filter(Boolean)
+    .join("\n");
+
+  full = full
+    .replace(/\n\s*\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n+/g, "\n")
+    .trim();
+
+  return full;
+}
+
+function enterUnifiedMode() {
+  activeType = null;
+  document.body.classList.add("unified-mode");
+  clearTextSelection();
+
+  const clean = getUnifiedCleanText();
+
+  codeView.innerHTML = `
+    <pre>${escapeHTML(clean)}</pre>
+  `;
+
+  buildTypeToolbar();
+  enableToolbarSwipe();
+}
+
 function enableToolbarSwipe() {
   const bar = document.querySelector(".type-toolbar");
   if (!bar) return;
@@ -222,19 +263,13 @@ function enableToolbarSwipe() {
     dragging = false;
 
     if (Math.abs(dx) > 120) {
-      activeType = null;
-      document.body.classList.add("unified-mode");
-      clearTextSelection();
-
-      document.querySelectorAll(".type-tool").forEach(button => {
-        button.classList.remove("active-tool");
-      });
-
       codeView.querySelectorAll(".code-block").forEach(block => {
         block.classList.remove("active-type", "dimmed-type", "selected-block", "dragging-block");
         block.style.transform = "";
         block.style.opacity = "";
       });
+
+      enterUnifiedMode();
     }
   });
 
@@ -352,10 +387,14 @@ function enableBlockSelectionAndErase() {
       const eraseThreshold = 120;
 
       if (moved && distance > eraseThreshold) {
+        const index = Number(block.dataset.index);
+
         block.classList.add("erasing-block");
 
         setTimeout(() => {
-          block.remove();
+          currentParts[index] = null;
+          currentParts = currentParts.filter(Boolean);
+          renderBlockMode();
         }, 180);
 
         return;
@@ -389,16 +428,13 @@ function enableBlockSelectionAndErase() {
   });
 }
 
-function renderSeparatedBlocks(text) {
-  const parts = splitCode(text);
-
-  activeType = null;
+function renderBlockMode() {
   document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
 
-  codeView.innerHTML = parts.map((part, index) => {
+  codeView.innerHTML = currentParts.map((part, index) => {
     return `
       <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
         <div class="section-body">
@@ -415,6 +451,12 @@ function renderSeparatedBlocks(text) {
   enableBlockSelectionAndErase();
 }
 
+function renderSeparatedBlocks(text) {
+  currentParts = splitCode(text);
+  activeType = null;
+  renderBlockMode();
+}
+
 function escapeHTML(text) {
   return text
     .replaceAll("&", "&amp;")
@@ -426,6 +468,8 @@ function startDefaultCanvas() {
   codeView.classList.add("hidden");
   scene.classList.remove("hidden");
   document.body.classList.remove("unified-mode");
+  activeType = null;
+  currentParts = [];
   buildStartUI();
 }
 
