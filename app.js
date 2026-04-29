@@ -168,15 +168,19 @@ function enableBlockSelectionAndErase() {
       startY = e.clientY;
       dx = 0;
       dy = 0;
-      dragging = true;
       moved = false;
       holdActivated = false;
 
-      block.setPointerCapture(e.pointerId);
+      const isSelected = block.classList.contains("selected-block");
+      dragging = !isSelected;
+
+      if (dragging) {
+        block.setPointerCapture(e.pointerId);
+      }
 
       clearHoldTimer();
 
-      if (block.classList.contains("selected-block")) {
+      if (isSelected) {
         holdTimer = setTimeout(() => {
           holdActivated = true;
           convertBlockToTextarea(block);
@@ -185,12 +189,14 @@ function enableBlockSelectionAndErase() {
     });
 
     block.addEventListener("pointermove", (e) => {
-      if (!dragging || block.classList.contains("editing-block")) return;
+      if (
+        !dragging ||
+        block.classList.contains("editing-block") ||
+        block.classList.contains("selected-block")
+      ) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
-
-      if (!block.classList.contains("selected-block")) return;
 
       if (Math.hypot(dx, dy) > 8) {
         moved = true;
@@ -203,12 +209,9 @@ function enableBlockSelectionAndErase() {
     });
 
     block.addEventListener("pointerup", () => {
-      if (!dragging) return;
+      const wasDragging = dragging;
       dragging = false;
       clearHoldTimer();
-
-      const distance = Math.hypot(dx, dy);
-      const eraseThreshold = 120;
 
       if (holdActivated) {
         block.classList.remove("dragging-block");
@@ -216,6 +219,16 @@ function enableBlockSelectionAndErase() {
         block.style.opacity = "";
         return;
       }
+
+      if (!wasDragging) {
+        if (!moved) {
+          block.classList.toggle("selected-block");
+        }
+        return;
+      }
+
+      const distance = Math.hypot(dx, dy);
+      const eraseThreshold = 120;
 
       if (moved && distance > eraseThreshold) {
         block.classList.add("erasing-block");
