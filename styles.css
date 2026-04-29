@@ -245,10 +245,13 @@ body.unified-mode {
 
 body.unified-mode .code-view {
   white-space: pre-wrap;
+  line-height: 1.35;
 }
 
 body.unified-mode .code-section,
-body.unified-mode .section-body {
+body.unified-mode .section-body,
+body.unified-mode .code-block {
+  display: contents !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 1;
@@ -256,29 +259,27 @@ body.unified-mode .section-body {
 }
 
 body.unified-mode .section-body {
-  display: block;
+  display: contents !important;
 }
 
 body.unified-mode .code-block {
-  display: contents;
   width: 100%;
   max-width: none;
-  margin: 0 !important;
-  padding: 0 !important;
   border: 0;
   border-radius: 0;
   outline: none;
   box-shadow: none;
   background: transparent;
   cursor: text;
-  transform: none;
 }
 
 body.unified-mode .code-block pre,
 body.unified-mode pre {
-  margin: 0;
-  display: inline;
-  white-space: pre-wrap;
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: pre-wrap !important;
+  line-height: 1.35;
 }
 
 body.unified-mode .code-block.active-type,
