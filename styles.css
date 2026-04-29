@@ -106,18 +106,53 @@ body {
   -webkit-appearance: none;
 }
 
+/* ---------- SECTIONS ---------- */
+
+.code-section {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
 .type-label {
   text-align: center;
   margin: 22px 0 18px;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    text-decoration-color 0.18s ease;
+}
+
+.type-label:active {
+  transform: scale(0.96);
 }
 
 .html-label { color: rgba(120, 90, 10, 0.9); }
 .css-label { color: rgba(0, 115, 105, 0.9); }
 .js-label { color: rgba(130, 82, 0, 0.9); }
 .svg-label { color: rgba(90, 60, 150, 0.9); }
+
+.code-section.collapsed-section {
+  opacity: 0.72;
+}
+
+.code-section.collapsed-section .section-body {
+  display: none;
+}
+
+.code-section.collapsed-section .type-label {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* ---------- CODE BLOCKS ---------- */
 
 .code-block {
   width: 68%;
@@ -182,6 +217,8 @@ body {
   transform: scale(0.92);
 }
 
+/* ---------- EDITOR ---------- */
+
 .block-editor {
   width: 100%;
   min-height: 120px;
@@ -201,6 +238,8 @@ body {
   outline: none;
 }
 
+/* ---------- TYPE COLORS ---------- */
+
 .code-block.type-html {
   background: rgba(255, 216, 77, 0.18);
   border-color: rgba(255, 216, 77, 0.26);
@@ -219,6 +258,12 @@ body {
 .code-block.type-svg {
   background: rgba(190, 160, 255, 0.16);
   border-color: rgba(190, 160, 255, 0.26);
+}
+
+/* ---------- FINAL FORM ---------- */
+
+.final-label {
+  color: rgba(40,40,40,0.72);
 }
 
 .status {
