@@ -316,17 +316,21 @@ function enableBlockSelectionAndErase() {
       holdActivated = false;
 
       const isSelected = block.classList.contains("selected-block");
-      dragging = !isSelected;
+
+      // UPDATED:
+      // Not selected = tap/select only.
+      // Selected = drag/erase/edit logic activates.
+      dragging = isSelected;
 
       if (dragging) {
         block.setPointerCapture(e.pointerId);
-      }
 
-      clearHoldTimer();
-
-      if (isSelected) {
         holdTimer = setTimeout(() => {
           holdActivated = true;
+          dragging = false;
+          block.classList.remove("dragging-block");
+          block.style.transform = "";
+          block.style.opacity = "";
           convertBlockToTextarea(block);
         }, 520);
       }
@@ -336,7 +340,6 @@ function enableBlockSelectionAndErase() {
       if (
         !dragging ||
         block.classList.contains("editing-block") ||
-        block.classList.contains("selected-block") ||
         !blockIsActiveForEditing()
       ) return;
 
@@ -367,6 +370,7 @@ function enableBlockSelectionAndErase() {
         return;
       }
 
+      // If it was NOT selected yet, this tap selects it.
       if (!wasDragging) {
         if (!moved) {
           const isNowSelected = !block.classList.contains("selected-block");
@@ -400,18 +404,7 @@ function enableBlockSelectionAndErase() {
         return;
       }
 
-      if (!moved) {
-        const isNowSelected = !block.classList.contains("selected-block");
-
-        block.classList.toggle("selected-block");
-
-        if (isNowSelected) {
-          selectBlockText(block);
-        } else {
-          clearTextSelection();
-        }
-      }
-
+      // Selected but barely moved = keep selected, reset visual.
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
