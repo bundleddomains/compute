@@ -4,6 +4,7 @@ const codeView = document.getElementById("codeView");
 
 let activeType = null;
 let currentParts = [];
+let selectBox = null;
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -95,16 +96,47 @@ function clearTextSelection() {
   if (selection) selection.removeAllRanges();
 }
 
-function selectBlockText(block) {
-  const pre = block.querySelector("pre");
-  if (!pre) return;
+function makeSelectBox() {
+  removeSelectBox();
 
-  const range = document.createRange();
-  range.selectNodeContents(pre);
+  selectBox = document.createElement("div");
+  selectBox.className = "custom-select-box";
+  document.body.appendChild(selectBox);
+}
 
-  const selection = window.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
+function updateSelectBox(x1, y1, x2, y2) {
+  if (!selectBox) return;
+
+  const left = Math.min(x1, x2);
+  const top = Math.min(y1, y2);
+  const width = Math.abs(x2 - x1);
+  const height = Math.abs(y2 - y1);
+
+  selectBox.style.left = left + "px";
+  selectBox.style.top = top + "px";
+  selectBox.style.width = width + "px";
+  selectBox.style.height = height + "px";
+}
+
+function removeSelectBox() {
+  if (selectBox) {
+    selectBox.remove();
+    selectBox = null;
+  }
+}
+
+function boxOverlapsBlock(block) {
+  if (!selectBox) return false;
+
+  const a = selectBox.getBoundingClientRect();
+  const b = block.getBoundingClientRect();
+
+  return (
+    a.right > b.left &&
+    a.left < b.right &&
+    a.bottom > b.top &&
+    a.top < b.bottom
+  );
 }
 
 function convertBlockToTextarea(block) {
@@ -144,6 +176,7 @@ function convertBlockToTextarea(block) {
 
     block.classList.remove("editing-block");
     block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
+    clearTextSelection();
   });
 }
 
@@ -287,6 +320,7 @@ function enableBlockSelectionAndErase() {
     let dx = 0;
     let dy = 0;
     let dragging = false;
+    let boxSelecting = false;
     let moved = false;
     let holdTimer = null;
     let holdActivated = false;
@@ -317,14 +351,12 @@ function enableBlockSelectionAndErase() {
 
       const isSelected = block.classList.contains("selected-block");
 
-      // UPDATED:
-      // Not selected = tap/select only.
-      // Selected = drag/erase/edit logic activates.
       dragging = isSelected;
+      boxSelecting = !isSelected;
+
+      block.setPointerCapture(e.pointerId);
 
       if (dragging) {
-        block.setPointerCapture(e.pointerId);
-
         holdTimer = setTimeout(() => {
           holdActivated = true;
           dragging = false;
@@ -337,22 +369,29 @@ function enableBlockSelectionAndErase() {
     });
 
     block.addEventListener("pointermove", (e) => {
-      if (
-        !dragging ||
-        block.classList.contains("editing-block") ||
-        !blockIsActiveForEditing()
-      ) return;
+      if (block.classList.contains("editing-block")) return;
+      if (!blockIsActiveForEditing()) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
 
-      if (Math.hypot(dx, dy) > 8) {
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > 8) {
         moved = true;
         clearHoldTimer();
+      }
 
+      if (dragging && moved) {
         block.classList.add("dragging-block");
         block.style.transform = `translate(${dx}px, ${dy}px)`;
         block.style.opacity = "0.82";
+        return;
+      }
+
+      if (boxSelecting && moved) {
+        if (!selectBox) makeSelectBox();
+        updateSelectBox(startX, startY, e.clientX, e.clientY);
       }
     });
 
@@ -360,30 +399,42 @@ function enableBlockSelectionAndErase() {
       if (!blockIsActiveForEditing()) return;
 
       const wasDragging = dragging;
+      const wasBoxSelecting = boxSelecting;
+
       dragging = false;
+      boxSelecting = false;
       clearHoldTimer();
 
       if (holdActivated) {
         block.classList.remove("dragging-block");
         block.style.transform = "";
         block.style.opacity = "";
+        removeSelectBox();
         return;
       }
 
-      // If it was NOT selected yet, this tap selects it.
+      if (wasBoxSelecting && moved) {
+        const overlaps = boxOverlapsBlock(block);
+        removeSelectBox();
+
+        if (overlaps) {
+          convertBlockToTextarea(block);
+        }
+
+        return;
+      }
+
       if (!wasDragging) {
         if (!moved) {
           const isNowSelected = !block.classList.contains("selected-block");
-
           block.classList.toggle("selected-block");
 
-          if (isNowSelected) {
-            selectBlockText(block);
-          } else {
+          if (!isNowSelected) {
             clearTextSelection();
           }
         }
 
+        removeSelectBox();
         return;
       }
 
@@ -404,19 +455,21 @@ function enableBlockSelectionAndErase() {
         return;
       }
 
-      // Selected but barely moved = keep selected, reset visual.
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
+      removeSelectBox();
     });
 
     block.addEventListener("pointercancel", () => {
       dragging = false;
+      boxSelecting = false;
       clearHoldTimer();
 
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
+      removeSelectBox();
     });
   });
 }
