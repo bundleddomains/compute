@@ -38,46 +38,12 @@ function makeMainPasteBox() {
 
   box.addEventListener("paste", (e) => {
     e.preventDefault();
-
     const text = (e.clipboardData || window.clipboardData).getData("text");
-
     currentParts = splitCode(text);
-
-    box.value = "";
-    box.classList.add("expanding-start");
-
-    setTimeout(() => {
-      showPreviewSeparation(box);
-    }, 180);
-
-    setTimeout(() => {
-      renderBlockMode(true);
-    }, 760);
+    renderBlockMode();
   });
 
   return box;
-}
-
-function showPreviewSeparation(box) {
-  const oldPreview = document.querySelector(".start-separation-preview");
-  if (oldPreview) oldPreview.remove();
-
-  const preview = document.createElement("div");
-  preview.className = "start-separation-preview";
-
-  preview.innerHTML = currentParts.map(part => {
-    return `
-      <div class="preview-part preview-${part.type}">
-        ${part.type.toUpperCase()}
-      </div>
-    `;
-  }).join("");
-
-  box.parentElement.appendChild(preview);
-
-  setTimeout(() => {
-    preview.classList.add("active-preview");
-  }, 20);
 }
 
 function splitCode(text) {
@@ -508,12 +474,11 @@ function enableBlockSelectionAndErase() {
   });
 }
 
-function renderBlockMode(animated = false) {
+function renderBlockMode() {
   document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
-  codeView.classList.toggle("reveal-blocks", animated);
 
   codeView.innerHTML = currentParts.map((part, index) => {
     return `
@@ -547,11 +512,6 @@ function escapeHTML(text) {
 
 function startDefaultCanvas() {
   codeView.classList.add("hidden");
-  codeView.classList.remove("reveal-blocks");
-
-  const oldPreview = document.querySelector(".start-separation-preview");
-  if (oldPreview) oldPreview.remove();
-
   scene.classList.remove("hidden");
   document.body.classList.remove("unified-mode");
   activeType = null;
