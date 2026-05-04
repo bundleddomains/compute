@@ -109,6 +109,17 @@ body.unified-mode {
   overflow: hidden;
   appearance: none;
   -webkit-appearance: none;
+
+  /* locks the visual size on iOS long-press */
+  width: 180px;
+  height: 120px;
+  box-sizing: border-box;
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.main-paste:focus {
+  transform: translate(-50%, -50%) scale(1) !important;
 }
 
 .main-paste.fade-out-start {
