@@ -41,20 +41,43 @@ function makeMainPasteBox() {
 
     const text = (e.clipboardData || window.clipboardData).getData("text");
 
-    box.value = text;
+    currentParts = splitCode(text);
+
+    box.value = "";
     box.classList.add("expanding-start");
 
     setTimeout(() => {
-      box.classList.add("breaking-start");
-    }, 420);
+      showPreviewSeparation(box);
+    }, 180);
 
     setTimeout(() => {
-      currentParts = splitCode(text);
       renderBlockMode(true);
     }, 760);
   });
 
   return box;
+}
+
+function showPreviewSeparation(box) {
+  const oldPreview = document.querySelector(".start-separation-preview");
+  if (oldPreview) oldPreview.remove();
+
+  const preview = document.createElement("div");
+  preview.className = "start-separation-preview";
+
+  preview.innerHTML = currentParts.map(part => {
+    return `
+      <div class="preview-part preview-${part.type}">
+        ${part.type.toUpperCase()}
+      </div>
+    `;
+  }).join("");
+
+  box.parentElement.appendChild(preview);
+
+  setTimeout(() => {
+    preview.classList.add("active-preview");
+  }, 20);
 }
 
 function splitCode(text) {
@@ -525,6 +548,10 @@ function escapeHTML(text) {
 function startDefaultCanvas() {
   codeView.classList.add("hidden");
   codeView.classList.remove("reveal-blocks");
+
+  const oldPreview = document.querySelector(".start-separation-preview");
+  if (oldPreview) oldPreview.remove();
+
   scene.classList.remove("hidden");
   document.body.classList.remove("unified-mode");
   activeType = null;
