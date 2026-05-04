@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HTMLO Canvas</title>
 
   <script>
-    const version = Date.now();
+    // 🔥 ONE version for everything
+    const VERSION = Date.now();
 
-    document.write(
-      `<link rel="stylesheet" href="styles.css?v=${version}">`
-    );
+    // CSS
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "styles.css?v=" + VERSION;
+    document.head.appendChild(css);
   </script>
 </head>
 
@@ -27,8 +30,9 @@
   </div>
 
   <script>
+    // JS (same version as CSS)
     const script = document.createElement("script");
-    script.src = "app.js?v=" + Date.now();
+    script.src = "app.js?v=" + VERSION;
     document.body.appendChild(script);
   </script>
 </body>
