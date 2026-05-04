@@ -38,9 +38,20 @@ function makeMainPasteBox() {
 
   box.addEventListener("paste", (e) => {
     e.preventDefault();
+
     const text = (e.clipboardData || window.clipboardData).getData("text");
-    currentParts = splitCode(text);
-    renderBlockMode();
+
+    box.value = text;
+    box.classList.add("expanding-start");
+
+    setTimeout(() => {
+      box.classList.add("breaking-start");
+    }, 420);
+
+    setTimeout(() => {
+      currentParts = splitCode(text);
+      renderBlockMode(true);
+    }, 760);
   });
 
   return box;
@@ -474,11 +485,12 @@ function enableBlockSelectionAndErase() {
   });
 }
 
-function renderBlockMode() {
+function renderBlockMode(animated = false) {
   document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
+  codeView.classList.toggle("reveal-blocks", animated);
 
   codeView.innerHTML = currentParts.map((part, index) => {
     return `
@@ -512,6 +524,7 @@ function escapeHTML(text) {
 
 function startDefaultCanvas() {
   codeView.classList.add("hidden");
+  codeView.classList.remove("reveal-blocks");
   scene.classList.remove("hidden");
   document.body.classList.remove("unified-mode");
   activeType = null;
