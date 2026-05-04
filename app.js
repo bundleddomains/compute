@@ -38,9 +38,15 @@ function makeMainPasteBox() {
 
   box.addEventListener("paste", (e) => {
     e.preventDefault();
+
     const text = (e.clipboardData || window.clipboardData).getData("text");
-    currentParts = splitCode(text);
-    renderBlockMode();
+
+    box.classList.add("fade-out-start");
+
+    setTimeout(() => {
+      currentParts = splitCode(text);
+      renderBlockMode(true);
+    }, 320);
   });
 
   return box;
@@ -474,11 +480,12 @@ function enableBlockSelectionAndErase() {
   });
 }
 
-function renderBlockMode() {
+function renderBlockMode(animated = false) {
   document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
+  codeView.classList.toggle("fade-in-blocks", animated);
 
   codeView.innerHTML = currentParts.map((part, index) => {
     return `
@@ -512,6 +519,7 @@ function escapeHTML(text) {
 
 function startDefaultCanvas() {
   codeView.classList.add("hidden");
+  codeView.classList.remove("fade-in-blocks");
   scene.classList.remove("hidden");
   document.body.classList.remove("unified-mode");
   activeType = null;
