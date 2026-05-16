@@ -117,24 +117,6 @@ function clearTextSelection() {
   if (selection) selection.removeAllRanges();
 }
 
-function rangeFromPoint(x, y) {
-  if (document.caretRangeFromPoint) {
-    return document.caretRangeFromPoint(x, y);
-  }
-
-  if (document.caretPositionFromPoint) {
-    const pos = document.caretPositionFromPoint(x, y);
-    if (!pos) return null;
-
-    const range = document.createRange();
-    range.setStart(pos.offsetNode, pos.offset);
-    range.collapse(true);
-    return range;
-  }
-
-  return null;
-}
-
 function makeSelectBox() {
   removeSelectBox();
 
@@ -178,7 +160,30 @@ function boxOverlapsBlock(block) {
   );
 }
 
-function convertBlockToTextarea(block) {
+function autoSizeEditor(editor) {
+  editor.style.height = "auto";
+  editor.style.height = editor.scrollHeight + "px";
+}
+
+function saveTextareaBlock(block) {
+  if (!block.classList.contains("editing-block")) return;
+
+  const editor = block.querySelector(".block-editor");
+  if (!editor) return;
+
+  const index = Number(block.dataset.index);
+  const newText = editor.value;
+
+  if (currentParts[index]) {
+    currentParts[index].content = newText;
+  }
+
+  block.classList.remove("editing-block", "selected-block");
+  block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
+  clearTextSelection();
+}
+
+function convertBlockToTextarea(block, selectAll = false) {
   if (block.classList.contains("editing-block")) return;
 
   const pre = block.querySelector("pre");
@@ -187,7 +192,7 @@ function convertBlockToTextarea(block) {
   const index = Number(block.dataset.index);
   const text = pre.textContent;
 
-  block.classList.add("editing-block");
+  block.classList.add("editing-block", "selected-block");
   block.innerHTML = "";
 
   const editor = document.createElement("textarea");
@@ -198,24 +203,37 @@ function convertBlockToTextarea(block) {
   editor.autocapitalize = "off";
   editor.autocomplete = "off";
   editor.autocorrect = "off";
+  editor.inputMode = "text";
 
   block.appendChild(editor);
 
-  requestAnimationFrame(() => {
-    editor.focus();
-    editor.setSelectionRange(0, editor.value.length);
+  editor.addEventListener("input", () => {
+    autoSizeEditor(editor);
+
+    if (currentParts[index]) {
+      currentParts[index].content = editor.value;
+    }
   });
 
   editor.addEventListener("blur", () => {
-    const newText = editor.value;
+    saveTextareaBlock(block);
+  });
 
-    if (currentParts[index]) {
-      currentParts[index].content = newText;
+  requestAnimationFrame(() => {
+    editor.focus();
+    autoSizeEditor(editor);
+
+    if (selectAll) {
+      editor.setSelectionRange(0, editor.value.length);
+    } else {
+      editor.setSelectionRange(0, 0);
     }
+  });
+}
 
-    block.classList.remove("editing-block");
-    block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
-    clearTextSelection();
+function closeOtherEditors(exceptBlock = null) {
+  codeView.querySelectorAll(".code-block.editing-block").forEach(block => {
+    if (block !== exceptBlock) saveTextareaBlock(block);
   });
 }
 
@@ -228,6 +246,8 @@ function getBlockType(block) {
 }
 
 function setActiveType(type) {
+  closeOtherEditors();
+
   if (document.body.classList.contains("unified-mode")) {
     document.body.classList.remove("unified-mode");
     activeType = null;
@@ -246,7 +266,9 @@ function setActiveType(type) {
   blocks.forEach(block => {
     const blockType = getBlockType(block);
 
-    block.classList.remove("active-type", "dimmed-type", "selected-block");
+    block.classList.remove("active-type", "dimmed-type", "selected-block", "dragging-block");
+    block.style.transform = "";
+    block.style.opacity = "";
 
     if (!activeType) return;
 
@@ -281,6 +303,8 @@ function buildTypeToolbar() {
 }
 
 function getUnifiedCleanText() {
+  closeOtherEditors();
+
   let full = currentParts
     .map(part => part.content.trim())
     .filter(Boolean)
@@ -319,6 +343,8 @@ function enableToolbarSwipe() {
   let dragging = false;
 
   bar.addEventListener("pointerdown", (e) => {
+    closeOtherEditors();
+
     startX = e.clientX;
     dx = 0;
     dragging = true;
@@ -361,9 +387,6 @@ function enableBlockSelectionAndErase() {
     let dragging = false;
     let moved = false;
 
-    let selectingText = false;
-    let selectStartRange = null;
-
     function blockIsActiveForEditing() {
       if (document.body.classList.contains("unified-mode")) return false;
       if (!activeType) return true;
@@ -371,74 +394,32 @@ function enableBlockSelectionAndErase() {
     }
 
     block.addEventListener("pointerdown", (e) => {
-      if (block.classList.contains("editing-block")) return;
       if (!blockIsActiveForEditing()) return;
+
+      if (block.classList.contains("editing-block")) {
+        return;
+      }
 
       startX = e.clientX;
       startY = e.clientY;
       dx = 0;
       dy = 0;
       moved = false;
-
-      const isSelected = block.classList.contains("selected-block");
-
-      if (isSelected) {
-        selectingText = true;
-        dragging = false;
-        selectStartRange = rangeFromPoint(e.clientX, e.clientY);
-
-        if (selectStartRange) {
-          block.setPointerCapture(e.pointerId);
-        }
-
-        return;
-      }
-
-      selectingText = false;
-      selectStartRange = null;
       dragging = true;
+
       block.setPointerCapture(e.pointerId);
       clearTextSelection();
     });
 
     block.addEventListener("pointermove", (e) => {
-      if (block.classList.contains("editing-block")) return;
       if (!blockIsActiveForEditing()) return;
+      if (block.classList.contains("editing-block")) return;
+      if (!dragging) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
 
       const distance = Math.hypot(dx, dy);
-
-      if (distance > 8) {
-        moved = true;
-      }
-
-      if (selectingText && selectStartRange) {
-        const endRange = rangeFromPoint(e.clientX, e.clientY);
-        if (!endRange) return;
-
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-
-        const range = document.createRange();
-
-        try {
-          range.setStart(selectStartRange.startContainer, selectStartRange.startOffset);
-          range.setEnd(endRange.startContainer, endRange.startOffset);
-          selection.addRange(range);
-        } catch {
-          try {
-            range.setStart(endRange.startContainer, endRange.startOffset);
-            range.setEnd(selectStartRange.startContainer, selectStartRange.startOffset);
-            selection.addRange(range);
-          } catch {}
-        }
-
-        return;
-      }
-
-      if (!dragging) return;
 
       if (distance > 18) {
         moved = true;
@@ -453,18 +434,10 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointerup", () => {
       if (!blockIsActiveForEditing()) return;
+      if (block.classList.contains("editing-block")) return;
 
       const wasDragging = dragging;
-      const wasSelectingText = selectingText;
-
       dragging = false;
-      selectingText = false;
-      selectStartRange = null;
-
-      if (wasSelectingText) {
-        removeSelectBox();
-        return;
-      }
 
       if (!wasDragging) {
         removeSelectBox();
@@ -472,7 +445,8 @@ function enableBlockSelectionAndErase() {
       }
 
       if (!moved) {
-        block.classList.toggle("selected-block");
+        closeOtherEditors(block);
+        convertBlockToTextarea(block, false);
         removeSelectBox();
         return;
       }
@@ -502,8 +476,6 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointercancel", () => {
       dragging = false;
-      selectingText = false;
-      selectStartRange = null;
 
       block.classList.remove("dragging-block");
       block.style.transform = "";
@@ -514,6 +486,8 @@ function enableBlockSelectionAndErase() {
 }
 
 function renderBlockMode(animated = false) {
+  closeOtherEditors();
+
   document.body.classList.remove("unified-mode");
 
   scene.classList.add("hidden");
