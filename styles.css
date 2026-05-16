@@ -19,6 +19,30 @@ body.unified-mode {
   box-sizing: border-box;
 }
 
+.status{
+  position:absolute;
+  top:10px;
+  left:12px;
+  z-index:50;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  color:rgba(0,0,0,.35);
+  cursor:pointer;
+  user-select:none;
+  transition:color .22s ease, text-shadow .22s ease, opacity .45s ease;
+}
+
+.status.status-green{
+  color:#00b84a;
+  text-shadow:0 0 10px rgba(0,184,74,.45);
+}
+
+.status.status-faded{
+  opacity:0;
+  pointer-events:none;
+}
+
 .code-view {
   position: absolute;
   inset: 10px;
@@ -145,13 +169,23 @@ body.unified-mode {
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-/* 🔥 FIXED EDIT MODE (NO SHRINK) */
+/* selection drag rectangle */
+.custom-select-box {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  border: 1px dashed rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+}
+
+/* fixed edit mode */
 .code-block.editing-block {
   outline: 3px dashed rgba(0,0,0,0.72);
   transform: none;
 }
 
-/* 🔥 FULL SIZE EDITOR */
+/* full size editor */
 .block-editor {
   width: 100%;
   min-height: 220px;
@@ -208,7 +242,7 @@ body.unified-mode {
   background: rgba(255,255,255,0.46);
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   cursor: pointer;
-  touch-action: none;
+  touch-action: manipulation;
   transition: all 0.16s ease;
 }
 
@@ -232,6 +266,15 @@ body.unified-mode {
 .code-block.erasing-block {
   opacity: 0;
   transform: scale(0.92);
+}
+
+.code-block.active-type {
+  opacity: 1;
+  transform: scale(1.01);
+}
+
+.code-block.dimmed-type {
+  opacity: 0.24;
 }
 
 /* ---------- UNIFIED MODE ---------- */
@@ -273,6 +316,11 @@ body.unified-mode .code-block {
   font-size: 10px;
   font-weight: 900;
   cursor: pointer;
+}
+
+.type-tool.active-tool {
+  background: #111;
+  color: white;
 }
 
 .hidden {
