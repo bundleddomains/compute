@@ -179,10 +179,15 @@ body.unified-mode {
   border-radius: 10px;
 }
 
-/* fixed edit mode */
+/* selected/editable block */
 .code-block.editing-block {
-  outline: 3px dashed rgba(0,0,0,0.72);
+  outline: 3px solid rgba(0,0,0,0.72);
+  outline-offset: 4px;
   transform: none;
+  cursor: text;
+  touch-action: auto;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* full size editor */
@@ -201,6 +206,7 @@ body.unified-mode {
   background: transparent;
 
   font: inherit;
+  font-family: inherit;
   line-height: 1.55;
   color: inherit;
 
@@ -210,6 +216,17 @@ body.unified-mode {
   appearance: none;
   -webkit-appearance: none;
   border-radius: 0;
+
+  user-select: text;
+  -webkit-user-select: text;
+
+  touch-action: auto;
+
+  caret-color: #111;
+}
+
+.code-block.editing-block textarea {
+  font-family: inherit;
 }
 
 .type-label {
