@@ -31,8 +31,9 @@ function buildStartUI() {
   const centerTitle = document.createElement("div");
   centerTitle.className = "center-title";
   centerTitle.innerHTML = `
-    REPLACE AND<br>
-    ERASE
+    <span class="center-word word-replace">REPLACE</span>
+    <span class="center-word word-and">AND</span>
+    <span class="center-word word-erase">ERASE</span>
   `;
 
   stack.appendChild(startMessage);
