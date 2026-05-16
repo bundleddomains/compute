@@ -28,6 +28,13 @@ function buildStartUI() {
     Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
+  const ghostTitle = document.createElement("div");
+  ghostTitle.className = "ghost-title";
+  ghostTitle.innerHTML = `
+    <div>Replace</div>
+    <div>&amp; Erase</div>
+  `;
+
   const centerTitle = document.createElement("div");
   centerTitle.className = "center-title";
   centerTitle.innerHTML = `
@@ -37,6 +44,7 @@ function buildStartUI() {
   `;
 
   stack.appendChild(startMessage);
+  stack.appendChild(ghostTitle);
   stack.appendChild(centerTitle);
 
   stack.removeEventListener("click", handleWholeScreenPaste);
