@@ -9,7 +9,8 @@ let selectBox = null;
 let statusWasPressed = false;
 
 if (status) {
-  status.addEventListener("click", () => {
+  status.addEventListener("click", (e) => {
+    e.stopPropagation();
     statusWasPressed = true;
     status.classList.remove("status-faded");
     status.classList.add("status-green");
@@ -18,6 +19,7 @@ if (status) {
 
 function buildStartUI() {
   stack.innerHTML = "";
+  stack.classList.remove("fade-out-start");
 
   const startMessage = document.createElement("div");
   startMessage.className = "start-message";
@@ -26,32 +28,29 @@ function buildStartUI() {
     Luhvcraft sculpted intellectual form of silence through the art of preservation.
   `;
 
-  const mainBox = makeMainPasteBox();
+  const centerTitle = document.createElement("div");
+  centerTitle.className = "center-title";
+  centerTitle.innerHTML = `
+    REPLACE AND<br>
+    ERASE
+  `;
 
   stack.appendChild(startMessage);
-  stack.appendChild(mainBox);
+  stack.appendChild(centerTitle);
+
+  stack.removeEventListener("click", handleWholeScreenPaste);
+  stack.addEventListener("click", handleWholeScreenPaste);
 }
 
-function makeMainPasteBox() {
-  const box = document.createElement("textarea");
-  box.className = "start-button main-button main-paste";
-  box.value = "REPLACE AND ERASE";
+async function handleWholeScreenPaste(e) {
+  if (e.target.closest("#status")) return;
 
-  box.spellcheck = false;
-  box.autocapitalize = "off";
-  box.autocomplete = "off";
-  box.autocorrect = "off";
+  try {
+    const text = await navigator.clipboard.readText();
 
-  box.addEventListener("focus", () => {
-    box.setSelectionRange(0, box.value.length);
-  });
+    if (!text || !text.trim()) return;
 
-  box.addEventListener("paste", (e) => {
-    e.preventDefault();
-
-    const text = (e.clipboardData || window.clipboardData).getData("text");
-
-    box.classList.add("fade-out-start");
+    stack.classList.add("fade-out-start");
 
     setTimeout(() => {
       currentParts = splitCode(text);
@@ -60,11 +59,13 @@ function makeMainPasteBox() {
         status.classList.add("status-faded");
       }
 
+      stack.removeEventListener("click", handleWholeScreenPaste);
       renderBlockMode(true);
     }, 320);
-  });
 
-  return box;
+  } catch (err) {
+    alert("Clipboard paste failed. Try copying the code again first.");
+  }
 }
 
 function splitCode(text) {
