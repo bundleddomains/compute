@@ -341,17 +341,7 @@ function enableBlockSelectionAndErase() {
     let dx = 0;
     let dy = 0;
     let dragging = false;
-    let boxSelecting = false;
     let moved = false;
-    let holdTimer = null;
-    let holdActivated = false;
-
-    function clearHoldTimer() {
-      if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-      }
-    }
 
     function blockIsActiveForEditing() {
       if (document.body.classList.contains("unified-mode")) return false;
@@ -368,30 +358,27 @@ function enableBlockSelectionAndErase() {
       dx = 0;
       dy = 0;
       moved = false;
-      holdActivated = false;
 
       const isSelected = block.classList.contains("selected-block");
 
-      dragging = isSelected;
-      boxSelecting = !isSelected;
-
-      block.setPointerCapture(e.pointerId);
-
-      if (dragging) {
-        holdTimer = setTimeout(() => {
-          holdActivated = true;
-          dragging = false;
-          block.classList.remove("dragging-block");
-          block.style.transform = "";
-          block.style.opacity = "";
-          convertBlockToTextarea(block);
-        }, 520);
+      /*
+        IMPORTANT:
+        Selected blocks are now protected from drag erase.
+        This lets selected code behave like selectable text.
+      */
+      if (isSelected) {
+        dragging = false;
+        return;
       }
+
+      dragging = true;
+      block.setPointerCapture(e.pointerId);
     });
 
     block.addEventListener("pointermove", (e) => {
       if (block.classList.contains("editing-block")) return;
       if (!blockIsActiveForEditing()) return;
+      if (!dragging) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
@@ -400,19 +387,12 @@ function enableBlockSelectionAndErase() {
 
       if (distance > 18) {
         moved = true;
-        clearHoldTimer();
       }
 
-      if (dragging && moved) {
+      if (moved) {
         block.classList.add("dragging-block");
         block.style.transform = `translate(${dx}px, ${dy}px)`;
         block.style.opacity = "0.82";
-        return;
-      }
-
-      if (boxSelecting && moved) {
-        if (!selectBox) makeSelectBox();
-        updateSelectBox(startX, startY, e.clientX, e.clientY);
       }
     });
 
@@ -420,41 +400,24 @@ function enableBlockSelectionAndErase() {
       if (!blockIsActiveForEditing()) return;
 
       const wasDragging = dragging;
-      const wasBoxSelecting = boxSelecting;
-
       dragging = false;
-      boxSelecting = false;
-      clearHoldTimer();
 
-      if (holdActivated) {
-        block.classList.remove("dragging-block");
-        block.style.transform = "";
-        block.style.opacity = "";
+      /*
+        If the block is selected, do nothing here.
+        Native text selection / future replace selection can happen freely.
+      */
+      if (block.classList.contains("selected-block") && !wasDragging) {
         removeSelectBox();
-        return;
-      }
-
-      if (wasBoxSelecting && moved) {
-        const overlaps = boxOverlapsBlock(block);
-        removeSelectBox();
-
-        if (overlaps) {
-          convertBlockToTextarea(block);
-        }
-
         return;
       }
 
       if (!wasDragging) {
-        if (!moved) {
-          const isNowSelected = !block.classList.contains("selected-block");
-          block.classList.toggle("selected-block");
+        removeSelectBox();
+        return;
+      }
 
-          if (!isNowSelected) {
-            clearTextSelection();
-          }
-        }
-
+      if (!moved) {
+        block.classList.toggle("selected-block");
         removeSelectBox();
         return;
       }
@@ -462,7 +425,7 @@ function enableBlockSelectionAndErase() {
       const distance = Math.hypot(dx, dy);
       const eraseThreshold = 120;
 
-      if (moved && distance > eraseThreshold) {
+      if (distance > eraseThreshold) {
         const index = Number(block.dataset.index);
 
         block.classList.add("erasing-block");
@@ -484,8 +447,6 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointercancel", () => {
       dragging = false;
-      boxSelecting = false;
-      clearHoldTimer();
 
       block.classList.remove("dragging-block");
       block.style.transform = "";
