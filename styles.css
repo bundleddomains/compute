@@ -111,10 +111,43 @@ body.unified-mode {
   font-weight:900;
   line-height:1.05;
   letter-spacing:.06em;
-  color:#111;
-  pointer-events:none;
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+
   user-select:none;
   -webkit-user-select:none;
+}
+
+.center-word{
+  pointer-events:auto;
+  cursor:pointer;
+
+  transition:
+    color .22s ease,
+    text-shadow .22s ease,
+    transform .18s ease,
+    opacity .22s ease;
+}
+
+.center-word:active{
+  transform:scale(.94);
+}
+
+.word-replace{
+  color:#2a68ff;
+  text-shadow:0 0 10px rgba(42,104,255,.18);
+}
+
+.word-and{
+  color:#c9a100;
+  text-shadow:0 0 10px rgba(201,161,0,.14);
+}
+
+.word-erase{
+  color:#6a1b2b;
+  text-shadow:0 0 10px rgba(106,27,43,.18);
 }
 
 .code-view.fade-in-blocks .code-section {
