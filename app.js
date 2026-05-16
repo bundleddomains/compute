@@ -1,10 +1,20 @@
 const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
+const status = document.getElementById("status");
 
 let activeType = null;
 let currentParts = [];
 let selectBox = null;
+let statusWasPressed = false;
+
+if (status) {
+  status.addEventListener("click", () => {
+    statusWasPressed = true;
+    status.classList.remove("status-faded");
+    status.classList.add("status-green");
+  });
+}
 
 function buildStartUI() {
   stack.innerHTML = "";
@@ -45,6 +55,11 @@ function makeMainPasteBox() {
 
     setTimeout(() => {
       currentParts = splitCode(text);
+
+      if (statusWasPressed && status) {
+        status.classList.add("status-faded");
+      }
+
       renderBlockMode(true);
     }, 320);
   });
@@ -383,7 +398,7 @@ function enableBlockSelectionAndErase() {
 
       const distance = Math.hypot(dx, dy);
 
-      if (distance > 8) {
+      if (distance > 18) {
         moved = true;
         clearHoldTimer();
       }
