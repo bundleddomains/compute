@@ -259,6 +259,7 @@ body.unified-mode {
   outline: 3px solid rgba(0,0,0,0.72);
   outline-offset: 4px;
   cursor: text;
+  touch-action: none;
   user-select: text;
   -webkit-user-select: text;
 }
