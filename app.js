@@ -117,6 +117,24 @@ function clearTextSelection() {
   if (selection) selection.removeAllRanges();
 }
 
+function rangeFromPoint(x, y) {
+  if (document.caretRangeFromPoint) {
+    return document.caretRangeFromPoint(x, y);
+  }
+
+  if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(x, y);
+    if (!pos) return null;
+
+    const range = document.createRange();
+    range.setStart(pos.offsetNode, pos.offset);
+    range.collapse(true);
+    return range;
+  }
+
+  return null;
+}
+
 function makeSelectBox() {
   removeSelectBox();
 
@@ -343,6 +361,9 @@ function enableBlockSelectionAndErase() {
     let dragging = false;
     let moved = false;
 
+    let selectingText = false;
+    let selectStartRange = null;
+
     function blockIsActiveForEditing() {
       if (document.body.classList.contains("unified-mode")) return false;
       if (!activeType) return true;
@@ -361,29 +382,63 @@ function enableBlockSelectionAndErase() {
 
       const isSelected = block.classList.contains("selected-block");
 
-      /*
-        IMPORTANT:
-        Selected blocks are now protected from drag erase.
-        This lets selected code behave like selectable text.
-      */
       if (isSelected) {
+        selectingText = true;
         dragging = false;
+        selectStartRange = rangeFromPoint(e.clientX, e.clientY);
+
+        if (selectStartRange) {
+          block.setPointerCapture(e.pointerId);
+        }
+
         return;
       }
 
+      selectingText = false;
+      selectStartRange = null;
       dragging = true;
       block.setPointerCapture(e.pointerId);
+      clearTextSelection();
     });
 
     block.addEventListener("pointermove", (e) => {
       if (block.classList.contains("editing-block")) return;
       if (!blockIsActiveForEditing()) return;
-      if (!dragging) return;
 
       dx = e.clientX - startX;
       dy = e.clientY - startY;
 
       const distance = Math.hypot(dx, dy);
+
+      if (distance > 8) {
+        moved = true;
+      }
+
+      if (selectingText && selectStartRange) {
+        const endRange = rangeFromPoint(e.clientX, e.clientY);
+        if (!endRange) return;
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+
+        const range = document.createRange();
+
+        try {
+          range.setStart(selectStartRange.startContainer, selectStartRange.startOffset);
+          range.setEnd(endRange.startContainer, endRange.startOffset);
+          selection.addRange(range);
+        } catch {
+          try {
+            range.setStart(endRange.startContainer, endRange.startOffset);
+            range.setEnd(selectStartRange.startContainer, selectStartRange.startOffset);
+            selection.addRange(range);
+          } catch {}
+        }
+
+        return;
+      }
+
+      if (!dragging) return;
 
       if (distance > 18) {
         moved = true;
@@ -400,13 +455,13 @@ function enableBlockSelectionAndErase() {
       if (!blockIsActiveForEditing()) return;
 
       const wasDragging = dragging;
-      dragging = false;
+      const wasSelectingText = selectingText;
 
-      /*
-        If the block is selected, do nothing here.
-        Native text selection / future replace selection can happen freely.
-      */
-      if (block.classList.contains("selected-block") && !wasDragging) {
+      dragging = false;
+      selectingText = false;
+      selectStartRange = null;
+
+      if (wasSelectingText) {
         removeSelectBox();
         return;
       }
@@ -447,6 +502,8 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointercancel", () => {
       dragging = false;
+      selectingText = false;
+      selectStartRange = null;
 
       block.classList.remove("dragging-block");
       block.style.transform = "";
