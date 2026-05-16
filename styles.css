@@ -77,6 +77,13 @@ body.unified-mode {
   position: relative;
   width: 100vw;
   height: 100vh;
+  cursor:pointer;
+  transition:opacity .32s ease, transform .32s ease;
+}
+
+.stack.fade-out-start{
+  opacity:0;
+  transform:scale(.985);
 }
 
 .start-message {
@@ -94,60 +101,20 @@ body.unified-mode {
   user-select: none;
 }
 
-.start-button {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid black;
-  background: white;
-  color: black;
-  font: inherit;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  box-sizing: border-box;
-  outline: none;
-  transition:
-    width 0.42s ease,
-    height 0.42s ease,
-    opacity 0.32s ease,
-    transform 0.34s ease,
-    border-radius 0.34s ease,
-    box-shadow 0.34s ease;
-}
-
-.main-button {
-  left: 50%;
-  width: 180px;
-  height: 120px;
-  font-size: 16px;
-  border-radius: 18px;
-  line-height: 1.15;
-  padding: 0 18px;
-}
-
-.main-paste {
-  resize: none;
-  text-align: center;
-  caret-color: transparent;
-  overflow: hidden;
-  appearance: none;
-  -webkit-appearance: none;
-
-  width: 180px;
-  height: 120px;
-  box-sizing: border-box;
-  font-size: 16px;
-  line-height: 1.15;
-}
-
-.main-paste:focus {
-  transform: translate(-50%, -50%) scale(1) !important;
-}
-
-.main-paste.fade-out-start {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.96);
+.center-title{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  font-size:24px;
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:.06em;
+  color:#111;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
 }
 
 .code-view.fade-in-blocks .code-section {
@@ -169,7 +136,6 @@ body.unified-mode {
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-/* selection drag rectangle */
 .custom-select-box {
   position: fixed;
   z-index: 999;
@@ -179,7 +145,6 @@ body.unified-mode {
   border-radius: 10px;
 }
 
-/* selected/editable block */
 .code-block.editing-block {
   outline: 3px solid rgba(0,0,0,0.72);
   outline-offset: 4px;
@@ -190,38 +155,29 @@ body.unified-mode {
   -webkit-user-select: text;
 }
 
-/* full size editor */
 .block-editor {
   width: 100%;
   min-height: 220px;
   height: auto;
   box-sizing: border-box;
   display: block;
-
   margin: 0;
   padding: 0;
-
   border: none;
   outline: none;
   background: transparent;
-
   font: inherit;
   font-family: inherit;
   line-height: 1.55;
   color: inherit;
-
   resize: none;
   overflow: hidden;
-
   appearance: none;
   -webkit-appearance: none;
   border-radius: 0;
-
   user-select: text;
   -webkit-user-select: text;
-
   touch-action: auto;
-
   caret-color: #111;
 }
 
