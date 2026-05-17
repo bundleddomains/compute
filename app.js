@@ -122,6 +122,45 @@ function splitCode(text) {
   return parts;
 }
 
+function guessInsertType(index) {
+  if (activeType) return activeType;
+
+  const before = currentParts[index - 1];
+  const after = currentParts[index];
+
+  if (before && before.type === "html" && after && after.type === "css") {
+    return "html";
+  }
+
+  if (before && before.type === "css" && after && after.type === "js") {
+    return "css";
+  }
+
+  if (before) return before.type;
+
+  return "html";
+}
+
+function insertEmptyBlock(index) {
+  closeOtherEditors();
+
+  const type = guessInsertType(index);
+
+  currentParts.splice(index, 0, {
+    type,
+    content: ""
+  });
+
+  renderBlockMode();
+
+  requestAnimationFrame(() => {
+    const block = codeView.querySelector(`.code-block[data-index="${index}"]`);
+    if (block) {
+      convertBlockToTextarea(block, 0, 0);
+    }
+  });
+}
+
 function buildFullFile() {
   closeOtherEditors();
 
@@ -461,6 +500,54 @@ function enableToolbarSwipe() {
   });
 }
 
+function enableInsertGapSwipe() {
+  const gaps = [...codeView.querySelectorAll(".insert-gap")];
+
+  gaps.forEach(gap => {
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let dy = 0;
+    let dragging = false;
+
+    gap.addEventListener("pointerdown", (e) => {
+      if (document.body.classList.contains("unified-mode")) return;
+
+      startX = e.clientX;
+      startY = e.clientY;
+      dx = 0;
+      dy = 0;
+      dragging = true;
+
+      gap.setPointerCapture(e.pointerId);
+    });
+
+    gap.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
+    });
+
+    gap.addEventListener("pointerup", () => {
+      if (!dragging) return;
+      dragging = false;
+
+      const horizontalSwipe = Math.abs(dx) > 90;
+      const mostlyHorizontal = Math.abs(dx) > Math.abs(dy) * 1.4;
+
+      if (horizontalSwipe && mostlyHorizontal) {
+        const index = Number(gap.dataset.insertIndex);
+        insertEmptyBlock(index);
+      }
+    });
+
+    gap.addEventListener("pointercancel", () => {
+      dragging = false;
+    });
+  });
+}
+
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
@@ -668,8 +755,10 @@ function renderBlockMode(animated = false) {
   codeView.classList.remove("hidden");
   codeView.classList.toggle("fade-in-blocks", animated);
 
-  codeView.innerHTML = currentParts.map((part, index) => {
-    return `
+  let html = "";
+
+  currentParts.forEach((part, index) => {
+    html += `
       <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
@@ -678,10 +767,17 @@ function renderBlockMode(animated = false) {
         </div>
       </section>
     `;
-  }).join("");
+
+    html += `
+      <div class="insert-gap" data-insert-index="${index + 1}"></div>
+    `;
+  });
+
+  codeView.innerHTML = html;
 
   buildTypeToolbar();
   enableToolbarSwipe();
+  enableInsertGapSwipe();
   enableBlockSelectionAndErase();
 }
 
