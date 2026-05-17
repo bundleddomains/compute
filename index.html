@@ -6,10 +6,8 @@
   <title>HTMLO Canvas</title>
 
   <script>
-    // 🔥 ONE version for everything
     const VERSION = Date.now();
 
-    // CSS
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = "styles.css?v=" + VERSION;
@@ -23,43 +21,22 @@
     <pre id="codeView" class="code-view hidden"></pre>
 
     <div id="scene" class="scene">
-      <div id="stack" class="stack">
 
-        <!-- soft background luhv -->
-        <div class="luhv-bg">
-          <span>luhv</span>
-        </div>
-
-        <!-- front rat artwork -->
-        <div class="front-photo-wrap">
-          <img src="IMG_6157.jpeg" class="front-photo" alt="DFI photo">
-        </div>
-
-        <!-- center replace & erase -->
-        <div class="center-title">
-
-          <div class="center-word word-replace">
-            REPLACE
-          </div>
-
-          <div class="center-word word-and">
-            AND
-          </div>
-
-          <div class="center-word word-erase">
-            ERASE
-          </div>
-
-        </div>
-
+      <!-- pictures stay visible because app.js does not erase this -->
+      <div class="front-art-layer">
+        <img src="8BF5090B-20B8-4FB0-8746-8F78CBF53728.png" class="front-art front-art-rat" alt="Erased rainbow rat">
+        <img src="IMG_6157.jpeg" class="front-art front-art-photo" alt="DFI photo">
       </div>
+
+      <!-- app.js can keep controlling this -->
+      <div id="stack" class="stack"></div>
+
     </div>
 
     <div id="status" class="status">Ready</div>
   </div>
 
   <script>
-    // JS (same version as CSS)
     const script = document.createElement("script");
     script.src = "app.js?v=" + VERSION;
     document.body.appendChild(script);
