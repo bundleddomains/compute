@@ -3,6 +3,15 @@
   width:100%;
 }
 
+.function-line{
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:7px;
+  background:rgba(150,105,55,.22);
+  color:#2d2118;
+  font-weight:900;
+}
+
 body {
   margin: 0;
   background: #ece9e4;
