@@ -73,10 +73,51 @@ body.unified-mode {
   overflow: hidden;
 }
 
+/* ---------- PERMANENT FRONT ART LAYER ---------- */
+
+.front-art-layer{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.front-art{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  display:block;
+  object-fit:contain;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* erased rainbow rat */
+.front-art-rat{
+  top:22%;
+  width:min(88vw, 620px);
+  max-height:46vh;
+  opacity:.98;
+  filter:drop-shadow(0 18px 42px rgba(0,0,0,.12));
+}
+
+/* older photo / background art */
+.front-art-photo{
+  top:45%;
+  width:min(78vw, 520px);
+  max-height:38vh;
+  opacity:.88;
+  filter:drop-shadow(0 18px 44px rgba(0,0,0,.10));
+}
+
 .stack {
   position: relative;
   width: 100vw;
   height: 100vh;
+  z-index:5;
   cursor:pointer;
   transition:opacity .32s ease, transform .32s ease;
 }
@@ -86,7 +127,7 @@ body.unified-mode {
   transform:scale(.985);
 }
 
-/* ---------- FIRST PAGE CENTER PHOTO ---------- */
+/* ---------- OLD SINGLE PHOTO SUPPORT ---------- */
 
 .front-photo-wrap{
   position:absolute;
