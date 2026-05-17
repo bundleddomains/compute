@@ -547,6 +547,42 @@ function enableInsertGapSwipe() {
   });
 }
 
+function enableFunctionLineTap() {
+  const labels = [...codeView.querySelectorAll(".function-line")];
+
+  labels.forEach(label => {
+    label.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
+
+    label.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      const block = label.closest(".code-block");
+      if (!block) return;
+
+      closeOtherEditors(block);
+
+      codeView.querySelectorAll(".code-block.selected-block").forEach(other => {
+        if (other !== block && !other.classList.contains("editing-block")) {
+          other.classList.remove("selected-block");
+        }
+      });
+
+      block.classList.add("selected-block");
+
+      const pre = block.querySelector("pre");
+      const text = pre ? pre.textContent : "";
+      const functionName = label.textContent.trim();
+      const start = text.indexOf(functionName);
+      const safeStart = Math.max(0, start);
+      const safeEnd = Math.max(0, start + functionName.length);
+
+      convertBlockToTextarea(block, safeStart, safeEnd);
+    });
+  });
+}
+
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
@@ -778,6 +814,7 @@ function renderBlockMode(animated = false) {
   enableToolbarSwipe();
   enableInsertGapSwipe();
   enableBlockSelectionAndErase();
+  enableFunctionLineTap();
 }
 
 function renderSeparatedBlocks(text) {
