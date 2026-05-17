@@ -682,10 +682,7 @@ function enableBlockSelectionAndErase() {
     let dy = 0;
     let dragging = false;
     let moved = false;
-
-    let selectingText = false;
-    let selectStartRange = null;
-    let selectEndRange = null;
+    let boxSelecting = false;
 
     function blockIsActiveForEditing() {
       if (document.body.classList.contains("unified-mode")) return false;
@@ -695,10 +692,7 @@ function enableBlockSelectionAndErase() {
 
     block.addEventListener("pointerdown", (e) => {
       if (!blockIsActiveForEditing()) return;
-
-      if (block.classList.contains("editing-block")) {
-        return;
-      }
+      if (block.classList.contains("editing-block")) return;
 
       startX = e.clientX;
       startY = e.clientY;
@@ -706,25 +700,20 @@ function enableBlockSelectionAndErase() {
       dy = 0;
       moved = false;
 
-      const isSelected = block.classList.contains("selected-block");
+      const alreadySelected =
+        block.classList.contains("selected-block");
 
-      if (isSelected) {
+      if (alreadySelected) {
+        boxSelecting = true;
         dragging = false;
-        selectingText = true;
-        selectStartRange = rangeFromPoint(e.clientX, e.clientY);
-        selectEndRange = selectStartRange;
-
-        if (selectStartRange) {
-          block.setPointerCapture(e.pointerId);
-        }
-
+        makeSelectBox();
+        updateSelectBox(startX, startY, startX, startY);
+        block.setPointerCapture(e.pointerId);
         return;
       }
 
+      boxSelecting = false;
       dragging = true;
-      selectingText = false;
-      selectStartRange = null;
-      selectEndRange = null;
 
       block.setPointerCapture(e.pointerId);
       clearTextSelection();
@@ -743,29 +732,8 @@ function enableBlockSelectionAndErase() {
         moved = true;
       }
 
-      if (selectingText && selectStartRange) {
-        const endRange = rangeFromPoint(e.clientX, e.clientY);
-        if (!endRange) return;
-
-        selectEndRange = endRange;
-
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-
-        const range = document.createRange();
-
-        try {
-          range.setStart(selectStartRange.startContainer, selectStartRange.startOffset);
-          range.setEnd(endRange.startContainer, endRange.startOffset);
-          selection.addRange(range);
-        } catch {
-          try {
-            range.setStart(endRange.startContainer, endRange.startOffset);
-            range.setEnd(selectStartRange.startContainer, selectStartRange.startOffset);
-            selection.addRange(range);
-          } catch {}
-        }
-
+      if (boxSelecting) {
+        updateSelectBox(startX, startY, e.clientX, e.clientY);
         return;
       }
 
@@ -773,14 +741,111 @@ function enableBlockSelectionAndErase() {
 
       if (distance > 18) {
         moved = true;
-      }
-
-      if (moved) {
         block.classList.add("dragging-block");
         block.style.transform = `translate(${dx}px, ${dy}px)`;
         block.style.opacity = "0.82";
       }
     });
+
+    block.addEventListener("pointerup", (e) => {
+      if (!blockIsActiveForEditing()) return;
+      if (block.classList.contains("editing-block")) return;
+
+      if (boxSelecting) {
+        boxSelecting = false;
+
+        const pre = block.querySelector("pre");
+
+        if (pre && selectBox) {
+          const box = selectBox.getBoundingClientRect();
+
+          const startRange = rangeFromPoint(box.left, box.top);
+          const endRange = rangeFromPoint(box.right, box.bottom);
+
+          if (startRange && endRange) {
+            let start = getTextOffset(
+              pre,
+              startRange.startContainer,
+              startRange.startOffset
+            );
+
+            let end = getTextOffset(
+              pre,
+              endRange.startContainer,
+              endRange.startOffset
+            );
+
+            if (start > end) {
+              const temp = start;
+              start = end;
+              end = temp;
+            }
+
+            convertBlockToTextarea(block, start, end);
+          }
+        }
+
+        removeSelectBox();
+        return;
+      }
+
+      const wasDragging = dragging;
+      dragging = false;
+
+      if (!wasDragging) {
+        removeSelectBox();
+        return;
+      }
+
+      if (!moved) {
+        closeOtherEditors(block);
+
+        codeView.querySelectorAll(".code-block.selected-block").forEach(other => {
+          if (other !== block && !other.classList.contains("editing-block")) {
+            other.classList.remove("selected-block");
+          }
+        });
+
+        block.classList.toggle("selected-block");
+        removeSelectBox();
+        return;
+      }
+
+      const distance = Math.hypot(dx, dy);
+      const eraseThreshold = 120;
+
+      if (distance > eraseThreshold) {
+        const index = Number(block.dataset.index);
+
+        block.classList.add("erasing-block");
+
+        setTimeout(() => {
+          currentParts[index] = null;
+          currentParts = currentParts.filter(Boolean);
+          renderBlockMode();
+        }, 180);
+
+        return;
+      }
+
+      block.classList.remove("dragging-block");
+      block.style.transform = "";
+      block.style.opacity = "";
+      removeSelectBox();
+    });
+
+    block.addEventListener("pointercancel", () => {
+      dragging = false;
+      boxSelecting = false;
+
+      block.classList.remove("dragging-block");
+      block.style.transform = "";
+      block.style.opacity = "";
+
+      removeSelectBox();
+    });
+  });
+}
 
     block.addEventListener("pointerup", () => {
       if (!blockIsActiveForEditing()) return;
