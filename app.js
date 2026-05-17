@@ -56,7 +56,6 @@ async function handleWholeScreenPaste(e) {
 
   try {
     const text = await navigator.clipboard.readText();
-
     if (!text || !text.trim()) return;
 
     stack.classList.add("fade-out-start");
@@ -310,7 +309,7 @@ function saveTextareaBlock(block) {
   }
 
   block.classList.remove("editing-block", "selected-block");
-  block.innerHTML = `<pre>${escapeHTML(newText)}</pre>`;
+  block.innerHTML = `<pre>${renderCodeHTML(newText)}</pre>`;
   clearTextSelection();
 }
 
@@ -762,7 +761,7 @@ function renderBlockMode(animated = false) {
       <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
-            <pre>${escapeHTML(part.content)}</pre>
+            <pre>${renderCodeHTML(part.content)}</pre>
           </div>
         </div>
       </section>
@@ -785,6 +784,13 @@ function renderSeparatedBlocks(text) {
   currentParts = splitCode(text);
   activeType = null;
   renderBlockMode();
+}
+
+function renderCodeHTML(text) {
+  return escapeHTML(text).replace(
+    /(^|\n)(function\s+[A-Za-z0-9_$]+\s*\([^)]*\)\s*\{)/g,
+    '$1<span class="function-line">$2</span>'
+  );
 }
 
 function escapeHTML(text) {
