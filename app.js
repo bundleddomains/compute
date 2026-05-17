@@ -98,7 +98,31 @@ function pushCleanHTML(parts, html) {
   }
 }
 
+function isStandaloneJS(text) {
+  const trimmed = text.trim();
+
+  const startsLikeJS =
+    /^(const|let|var|function|async function|class)\b/.test(trimmed);
+
+  const hasJSStructure =
+    /\bfunction\s+[A-Za-z0-9_$]+\s*\(/.test(trimmed) ||
+    /\bconst\s+[A-Za-z0-9_$]+\s*=/.test(trimmed) ||
+    /\bdocument\.getElementById\b/.test(trimmed);
+
+  const startsLikeHTML =
+    /^<!doctype|^<html|^<head|^<body|^<div|^<style|^<script|^<svg/i.test(trimmed);
+
+  return hasJSStructure && startsLikeJS && !startsLikeHTML;
+}
+
 function splitCode(text) {
+  if (isStandaloneJS(text)) {
+    return [{
+      type: "js",
+      content: text.trim()
+    }];
+  }
+
   const parts = [];
   const regex = /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
 
