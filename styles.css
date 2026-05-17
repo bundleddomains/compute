@@ -382,6 +382,19 @@ body.unified-mode {
   line-height: 1.55;
 }
 
+.code-block.active-type,
+.code-block.selected-block{
+  background:#2b2118;
+  color:#f4dfbd;
+  box-shadow:
+    0 18px 45px rgba(70,45,20,.25);
+}
+
+.code-block.active-type pre,
+.code-block.selected-block pre{
+  color:#f4dfbd;
+}
+
 .code-block.selected-block {
   outline: 3px solid rgba(0,0,0,0.72);
   outline-offset: 4px;
