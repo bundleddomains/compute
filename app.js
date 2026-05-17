@@ -124,7 +124,9 @@ function splitCode(text) {
   }
 
   const parts = [];
-  const regex = /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
+
+  const regex =
+    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
 
   let lastIndex = 0;
   let match;
@@ -141,14 +143,31 @@ function splitCode(text) {
     if (/^<style/i.test(full)) {
       parts.push({
         type: "css",
-        content: full.replace(/<style\b[^>]*>/i, "").replace(/<\/style>/i, "").trim()
+        content: full
+          .replace(/<style\b[^>]*>/i, "")
+          .replace(/<\/style>/i, "")
+          .trim()
       });
-    } else if (/^<script/i.test(full)) {
-      parts.push({
-        type: "js",
-        content: full.replace(/<script\b[^>]*>/i, "").replace(/<\/script>/i, "").trim()
-      });
-    } else if (/^<svg/i.test(full)) {
+    }
+
+    else if (/^<script/i.test(full)) {
+      if (/\bsrc\s*=/.test(full)) {
+        parts.push({
+          type: "html",
+          content: full.trim()
+        });
+      } else {
+        parts.push({
+          type: "js",
+          content: full
+            .replace(/<script\b[^>]*>/i, "")
+            .replace(/<\/script>/i, "")
+            .trim()
+        });
+      }
+    }
+
+    else if (/^<svg/i.test(full)) {
       parts.push({
         type: "svg",
         content: full.trim()
@@ -209,42 +228,36 @@ function insertEmptyBlock(index) {
 function buildFullFile() {
   closeOtherEditors();
 
-  const html = currentParts
-    .filter(part => part.type === "html" || part.type === "svg")
-    .map(part => part.content.trim())
-    .filter(Boolean)
-    .join("\n");
+  const rebuilt = currentParts
+    .map(part => {
+      const content = part.content.trim();
+      if (!content) return "";
 
-  const css = currentParts
-    .filter(part => part.type === "css")
-    .map(part => part.content.trim())
+      if (part.type === "css") {
+        return `<style>
+${content}
+</style>`;
+      }
+
+      if (part.type === "js") {
+        return `<script>
+${content}
+</script>`;
+      }
+
+      return content;
+    })
     .filter(Boolean)
     .join("\n\n");
-
-  const js = currentParts
-    .filter(part => part.type === "js")
-    .map(part => part.content.trim())
-    .filter(Boolean)
-    .join("\n\n");
-
-  const styleBlock = css ? `<style>
-${css}
-</style>` : "";
-
-  const scriptBlock = js ? `<script>
-${js}
-</script>` : "";
 
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-${styleBlock}
 </head>
 <body>
-${html}
-${scriptBlock}
+${rebuilt}
 </body>
 </html>`;
 }
@@ -477,15 +490,9 @@ function buildTypeToolbar() {
 }
 
 function getUnifiedCleanText() {
-  let full = buildFullFile();
-
-  full = full
-    .replace(/\n\s*\n/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n+/g, "\n")
+  return buildFullFile()
+    .replace(/\n\s*\n\s*\n/g, "\n\n")
     .trim();
-
-  return full;
 }
 
 function enterUnifiedMode() {
