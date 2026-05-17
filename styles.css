@@ -10,6 +10,13 @@
   background:rgba(150,105,55,.22);
   color:#2d2118;
   font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.function-line:active{
+  transform:scale(.97);
+  background:rgba(150,105,55,.32);
 }
 
 body {
