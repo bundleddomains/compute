@@ -76,21 +76,43 @@ async function handleWholeScreenPaste(e) {
   }
 }
 
+function removePasteJunk(text) {
+  return text
+    .replace(/^\s*[\w\-(). ]+\.(png|jpg|jpeg|gif|webp|svg)\s*\n+/i, "")
+    .trim();
+}
+
 function cleanHTMLShell(html) {
   return html
     .replace(/<!doctype[^>]*>/gi, "")
     .replace(/<\/?html[^>]*>/gi, "")
     .replace(/<\/?head[^>]*>/gi, "")
-    .replace(/<meta[^>]*>/gi, "")
-    .replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "")
     .replace(/<\/?body[^>]*>/gi, "")
     .trim();
+}
+
+function isHeadTag(text) {
+  const trimmed = text.trim();
+
+  return (
+    /^<meta\b/i.test(trimmed) ||
+    /^<title\b/i.test(trimmed) ||
+    /^<link\b/i.test(trimmed) ||
+    /^<base\b/i.test(trimmed)
+  );
 }
 
 function pushCleanHTML(parts, html) {
   const cleanedHTML = cleanHTMLShell(html);
 
-  if (cleanedHTML) {
+  if (!cleanedHTML) return;
+
+  if (isHeadTag(cleanedHTML)) {
+    parts.push({
+      type: "head",
+      content: cleanedHTML
+    });
+  } else {
     parts.push({
       type: "html",
       content: cleanedHTML
@@ -116,6 +138,8 @@ function isStandaloneJS(text) {
 }
 
 function splitCode(text) {
+  text = removePasteJunk(text);
+
   if (isStandaloneJS(text)) {
     return [{
       type: "js",
@@ -126,7 +150,7 @@ function splitCode(text) {
   const parts = [];
 
   const regex =
-    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
+    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)|(<meta\b[^>]*>)|(<link\b[^>]*>)|(<title\b[^>]*>[\s\S]*?<\/title>)/gi;
 
   let lastIndex = 0;
   let match;
@@ -174,6 +198,13 @@ function splitCode(text) {
       });
     }
 
+    else if (/^<meta/i.test(full) || /^<link/i.test(full) || /^<title/i.test(full)) {
+      parts.push({
+        type: "head",
+        content: full.trim()
+      });
+    }
+
     lastIndex = regex.lastIndex;
   }
 
@@ -187,20 +218,11 @@ function splitCode(text) {
 }
 
 function guessInsertType(index) {
-  if (activeType) return activeType;
+  if (activeType && activeType !== "head") return activeType;
 
   const before = currentParts[index - 1];
-  const after = currentParts[index];
 
-  if (before && before.type === "html" && after && after.type === "css") {
-    return "html";
-  }
-
-  if (before && before.type === "css" && after && after.type === "js") {
-    return "css";
-  }
-
-  if (before) return before.type;
+  if (before) return before.type === "head" ? "html" : before.type;
 
   return "html";
 }
@@ -228,36 +250,41 @@ function insertEmptyBlock(index) {
 function buildFullFile() {
   closeOtherEditors();
 
-  const rebuilt = currentParts
-    .map(part => {
-      const content = part.content.trim();
-      if (!content) return "";
+  const headParts = [];
+  const bodyParts = [];
 
-      if (part.type === "css") {
-        return `<style>
+  currentParts.forEach(part => {
+    const content = part.content.trim();
+    if (!content) return;
+
+    if (part.type === "head") {
+      headParts.push(content);
+    }
+
+    else if (part.type === "css") {
+      headParts.push(`<style>
 ${content}
-</style>`;
-      }
+</style>`);
+    }
 
-      if (part.type === "js") {
-        return `<script>
+    else if (part.type === "js") {
+      bodyParts.push(`<script>
 ${content}
-</script>`;
-      }
+</script>`);
+    }
 
-      return content;
-    })
-    .filter(Boolean)
-    .join("\n\n");
+    else {
+      bodyParts.push(content);
+    }
+  });
 
   return `<!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+${headParts.join("\n")}
 </head>
 <body>
-${rebuilt}
+${bodyParts.join("\n\n")}
 </body>
 </html>`;
 }
@@ -425,6 +452,7 @@ function closeOtherEditors(exceptBlock = null) {
 }
 
 function getBlockType(block) {
+  if (block.classList.contains("type-head")) return "head";
   if (block.classList.contains("type-html")) return "html";
   if (block.classList.contains("type-css")) return "css";
   if (block.classList.contains("type-js")) return "js";
