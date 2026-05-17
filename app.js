@@ -8,6 +8,9 @@ let currentParts = [];
 let selectBox = null;
 let statusWasPressed = false;
 
+let selectBoxRAF = null;
+let latestSelectBoxPoint = null;
+
 if (status) {
   status.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -363,7 +366,33 @@ function updateSelectBox(x1, y1, x2, y2) {
   selectBox.style.height = height + "px";
 }
 
+function scheduleSelectBoxUpdate(x1, y1, x2, y2) {
+  latestSelectBoxPoint = { x1, y1, x2, y2 };
+
+  if (selectBoxRAF) return;
+
+  selectBoxRAF = requestAnimationFrame(() => {
+    if (latestSelectBoxPoint) {
+      updateSelectBox(
+        latestSelectBoxPoint.x1,
+        latestSelectBoxPoint.y1,
+        latestSelectBoxPoint.x2,
+        latestSelectBoxPoint.y2
+      );
+    }
+
+    selectBoxRAF = null;
+  });
+}
+
 function removeSelectBox() {
+  if (selectBoxRAF) {
+    cancelAnimationFrame(selectBoxRAF);
+    selectBoxRAF = null;
+  }
+
+  latestSelectBoxPoint = null;
+
   if (selectBox) {
     selectBox.remove();
     selectBox = null;
@@ -691,10 +720,15 @@ function enableBlockSelectionAndErase() {
         block.classList.contains("selected-block");
 
       if (alreadySelected) {
+        e.preventDefault();
+        clearTextSelection();
+
         boxSelecting = true;
         dragging = false;
 
         makeSelectBox();
+
+        /* instant first draw */
         updateSelectBox(startX, startY, startX, startY);
 
         block.setPointerCapture(e.pointerId);
@@ -717,12 +751,15 @@ function enableBlockSelectionAndErase() {
 
       const distance = Math.hypot(dx, dy);
 
-      if (distance > 8) {
+      if (distance > 2) {
         moved = true;
       }
 
       if (boxSelecting) {
-        updateSelectBox(startX, startY, e.clientX, e.clientY);
+        e.preventDefault();
+
+        /* smoother live update */
+        scheduleSelectBoxUpdate(startX, startY, e.clientX, e.clientY);
         return;
       }
 
@@ -736,12 +773,17 @@ function enableBlockSelectionAndErase() {
       }
     });
 
-    block.addEventListener("pointerup", () => {
+    block.addEventListener("pointerup", (e) => {
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
 
       if (boxSelecting) {
+        e.preventDefault();
+
         boxSelecting = false;
+
+        /* final exact draw before reading box */
+        updateSelectBox(startX, startY, e.clientX, e.clientY);
 
         const pre = block.querySelector("pre");
 
@@ -775,6 +817,11 @@ function enableBlockSelectionAndErase() {
         }
 
         removeSelectBox();
+
+        try {
+          block.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+
         return;
       }
 
@@ -797,6 +844,11 @@ function enableBlockSelectionAndErase() {
 
         block.classList.toggle("selected-block");
         removeSelectBox();
+
+        try {
+          block.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+
         return;
       }
 
@@ -821,9 +873,13 @@ function enableBlockSelectionAndErase() {
       block.style.transform = "";
       block.style.opacity = "";
       removeSelectBox();
+
+      try {
+        block.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     });
 
-    block.addEventListener("pointercancel", () => {
+    block.addEventListener("pointercancel", (e) => {
       dragging = false;
       boxSelecting = false;
 
@@ -832,6 +888,10 @@ function enableBlockSelectionAndErase() {
       block.style.opacity = "";
 
       removeSelectBox();
+
+      try {
+        block.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     });
   });
 }
