@@ -104,7 +104,6 @@ function isHeadTag(text) {
 
 function pushCleanHTML(parts, html) {
   const cleanedHTML = cleanHTMLShell(html);
-
   if (!cleanedHTML) return;
 
   if (isHeadTag(cleanedHTML)) {
@@ -218,7 +217,9 @@ function splitCode(text) {
 }
 
 function guessInsertType(index) {
-  if (activeType && activeType !== "head" && activeType !== "hidden") return activeType;
+  if (activeType && activeType !== "head" && activeType !== "hidden") {
+    return activeType;
+  }
 
   const before = currentParts[index - 1];
 
@@ -367,20 +368,6 @@ function removeSelectBox() {
     selectBox.remove();
     selectBox = null;
   }
-}
-
-function boxOverlapsBlock(block) {
-  if (!selectBox) return false;
-
-  const a = selectBox.getBoundingClientRect();
-  const b = block.getBoundingClientRect();
-
-  return (
-    a.right > b.left &&
-    a.left < b.right &&
-    a.bottom > b.top &&
-    a.top < b.bottom
-  );
 }
 
 function autoSizeEditor(editor) {
@@ -706,8 +693,10 @@ function enableBlockSelectionAndErase() {
       if (alreadySelected) {
         boxSelecting = true;
         dragging = false;
+
         makeSelectBox();
         updateSelectBox(startX, startY, startX, startY);
+
         block.setPointerCapture(e.pointerId);
         return;
       }
@@ -747,7 +736,7 @@ function enableBlockSelectionAndErase() {
       }
     });
 
-    block.addEventListener("pointerup", (e) => {
+    block.addEventListener("pointerup", () => {
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
 
@@ -842,94 +831,6 @@ function enableBlockSelectionAndErase() {
       block.style.transform = "";
       block.style.opacity = "";
 
-      removeSelectBox();
-    });
-  });
-}
-
-    block.addEventListener("pointerup", () => {
-      if (!blockIsActiveForEditing()) return;
-      if (block.classList.contains("editing-block")) return;
-
-      const wasDragging = dragging;
-      const wasSelectingText = selectingText;
-
-      dragging = false;
-      selectingText = false;
-
-      if (wasSelectingText) {
-        const pre = block.querySelector("pre");
-
-        if (pre && selectStartRange && selectEndRange) {
-          let start = getTextOffset(pre, selectStartRange.startContainer, selectStartRange.startOffset);
-          let end = getTextOffset(pre, selectEndRange.startContainer, selectEndRange.startOffset);
-
-          if (start > end) {
-            const temp = start;
-            start = end;
-            end = temp;
-          }
-
-          convertBlockToTextarea(block, start, end);
-        }
-
-        selectStartRange = null;
-        selectEndRange = null;
-        removeSelectBox();
-        return;
-      }
-
-      if (!wasDragging) {
-        removeSelectBox();
-        return;
-      }
-
-      if (!moved) {
-        closeOtherEditors(block);
-
-        codeView.querySelectorAll(".code-block.selected-block").forEach(otherBlock => {
-          if (otherBlock !== block && !otherBlock.classList.contains("editing-block")) {
-            otherBlock.classList.remove("selected-block");
-          }
-        });
-
-        block.classList.toggle("selected-block");
-        removeSelectBox();
-        return;
-      }
-
-      const distance = Math.hypot(dx, dy);
-      const eraseThreshold = 120;
-
-      if (distance > eraseThreshold) {
-        const index = Number(block.dataset.index);
-
-        block.classList.add("erasing-block");
-
-        setTimeout(() => {
-          currentParts[index] = null;
-          currentParts = currentParts.filter(Boolean);
-          renderBlockMode();
-        }, 180);
-
-        return;
-      }
-
-      block.classList.remove("dragging-block");
-      block.style.transform = "";
-      block.style.opacity = "";
-      removeSelectBox();
-    });
-
-    block.addEventListener("pointercancel", () => {
-      dragging = false;
-      selectingText = false;
-      selectStartRange = null;
-      selectEndRange = null;
-
-      block.classList.remove("dragging-block");
-      block.style.transform = "";
-      block.style.opacity = "";
       removeSelectBox();
     });
   });
