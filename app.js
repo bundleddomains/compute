@@ -122,6 +122,45 @@ function splitCode(text) {
   return parts;
 }
 
+function buildFullFile() {
+  closeOtherEditors();
+
+  const html = currentParts
+    .filter(part => part.type === "html" || part.type === "svg")
+    .map(part => part.content.trim())
+    .filter(Boolean)
+    .join("\n");
+
+  const css = currentParts
+    .filter(part => part.type === "css")
+    .map(part => part.content.trim())
+    .filter(Boolean)
+    .join("\n\n");
+
+  const js = currentParts
+    .filter(part => part.type === "js")
+    .map(part => part.content.trim())
+    .filter(Boolean)
+    .join("\n\n");
+
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+<script>
+${js}
+</script>
+</body>
+</html>`;
+}
+
 function clearTextSelection() {
   const selection = window.getSelection();
   if (selection) selection.removeAllRanges();
@@ -350,12 +389,7 @@ function buildTypeToolbar() {
 }
 
 function getUnifiedCleanText() {
-  closeOtherEditors();
-
-  let full = currentParts
-    .map(part => part.content.trim())
-    .filter(Boolean)
-    .join("\n");
+  let full = buildFullFile();
 
   full = full
     .replace(/\n\s*\n/g, "\n")
