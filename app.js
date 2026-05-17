@@ -76,6 +76,28 @@ async function handleWholeScreenPaste(e) {
   }
 }
 
+function cleanHTMLShell(html) {
+  return html
+    .replace(/<!doctype[^>]*>/gi, "")
+    .replace(/<\/?html[^>]*>/gi, "")
+    .replace(/<\/?head[^>]*>/gi, "")
+    .replace(/<meta[^>]*>/gi, "")
+    .replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "")
+    .replace(/<\/?body[^>]*>/gi, "")
+    .trim();
+}
+
+function pushCleanHTML(parts, html) {
+  const cleanedHTML = cleanHTMLShell(html);
+
+  if (cleanedHTML) {
+    parts.push({
+      type: "html",
+      content: cleanedHTML
+    });
+  }
+}
+
 function splitCode(text) {
   const parts = [];
   const regex = /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
@@ -87,7 +109,7 @@ function splitCode(text) {
     const before = text.slice(lastIndex, match.index).trim();
 
     if (before) {
-      parts.push({ type: "html", content: before });
+      pushCleanHTML(parts, before);
     }
 
     const full = match[0];
@@ -115,7 +137,7 @@ function splitCode(text) {
   const after = text.slice(lastIndex).trim();
 
   if (after) {
-    parts.push({ type: "html", content: after });
+    pushCleanHTML(parts, after);
   }
 
   return parts;
