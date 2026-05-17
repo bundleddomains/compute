@@ -177,7 +177,7 @@ function splitCode(text) {
     else if (/^<script/i.test(full)) {
       if (/\bsrc\s*=/.test(full)) {
         parts.push({
-          type: "html",
+          type: "hidden",
           content: full.trim()
         });
       } else {
@@ -218,11 +218,14 @@ function splitCode(text) {
 }
 
 function guessInsertType(index) {
-  if (activeType && activeType !== "head") return activeType;
+  if (activeType && activeType !== "head" && activeType !== "hidden") return activeType;
 
   const before = currentParts[index - 1];
 
-  if (before) return before.type === "head" ? "html" : before.type;
+  if (before) {
+    if (before.type === "head" || before.type === "hidden") return "html";
+    return before.type;
+  }
 
   return "html";
 }
@@ -271,6 +274,10 @@ ${content}
       bodyParts.push(`<script>
 ${content}
 </script>`);
+    }
+
+    else if (part.type === "hidden") {
+      bodyParts.push(content);
     }
 
     else {
@@ -453,6 +460,7 @@ function closeOtherEditors(exceptBlock = null) {
 
 function getBlockType(block) {
   if (block.classList.contains("type-head")) return "head";
+  if (block.classList.contains("type-hidden")) return "hidden";
   if (block.classList.contains("type-html")) return "html";
   if (block.classList.contains("type-css")) return "css";
   if (block.classList.contains("type-js")) return "js";
@@ -874,6 +882,8 @@ function renderBlockMode(animated = false) {
   let html = "";
 
   currentParts.forEach((part, index) => {
+    if (part.type === "head" || part.type === "hidden") return;
+
     html += `
       <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
         <div class="section-body">
