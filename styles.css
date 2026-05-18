@@ -81,6 +81,7 @@ body.unified-mode {
   border-radius: 24px;
   background: rgba(255,255,255,0.38);
   z-index: 10;
+  -webkit-overflow-scrolling: touch;
 }
 
 .scene {
@@ -296,16 +297,8 @@ body.unified-mode {
   border: 1px dashed rgba(0,0,0,0.55);
   background: rgba(0,0,0,0.05);
   border-radius: 10px;
-}
-
-.code-block.editing-block {
-  outline: 3px solid rgba(0,0,0,0.72);
-  outline-offset: 4px;
-  transform: none;
-  cursor: text;
-  touch-action: auto;
-  user-select: text;
-  -webkit-user-select: text;
+  touch-action:none;
+  will-change:left, top, width, height;
 }
 
 .block-editor {
@@ -368,8 +361,8 @@ body.unified-mode {
   background: rgba(255,255,255,0.46);
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   cursor: grab;
-  touch-action: manipulation;
-  transition: all 0.16s ease;
+  touch-action: none;
+  transition: opacity 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -387,16 +380,18 @@ body.unified-mode {
   transform:scale(1.01);
 }
 
+.code-block.dimmed-type {
+  opacity: 0.24;
+}
+
 .code-block.selected-block{
   outline:3px solid rgba(0,0,0,.72);
   outline-offset:4px;
-
   background:rgba(255,255,255,.46);
   color:#2f2f2f;
   box-shadow:0 1px 2px rgba(0,0,0,.03);
-
   cursor:text;
-  touch-action:auto;
+  touch-action:none;
   user-select:text;
   -webkit-user-select:text;
 }
@@ -407,16 +402,12 @@ body.unified-mode {
   -webkit-user-select:text;
 }
 
-.code-block.selected-block {
+.code-block.editing-block {
   outline: 3px solid rgba(0,0,0,0.72);
   outline-offset: 4px;
+  transform: none;
   cursor: text;
   touch-action: auto;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.code-block.selected-block pre {
   user-select: text;
   -webkit-user-select: text;
 }
@@ -431,20 +422,12 @@ body.unified-mode {
   transition: none;
   z-index: 20;
   cursor: grabbing;
+  will-change:transform;
 }
 
 .code-block.erasing-block {
   opacity: 0;
   transform: scale(0.92);
-}
-
-.code-block.active-type {
-  opacity: 1;
-  transform: scale(1.01);
-}
-
-.code-block.dimmed-type {
-  opacity: 0.24;
 }
 
 body.unified-mode .code-view {
@@ -475,6 +458,9 @@ body.unified-mode .code-block {
   background: rgba(255,255,255,0.72);
   border: 1px solid rgba(120,120,120,0.14);
   box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+  touch-action: none;
+  user-select:none;
+  -webkit-user-select:none;
 }
 
 .type-tool {
