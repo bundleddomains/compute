@@ -1002,10 +1002,24 @@ function renderSeparatedBlocks(text) {
 }
 
 function renderCodeHTML(text) {
-  return escapeHTML(text).replace(
+  let html = escapeHTML(text);
+
+  html = html.replace(
     /(^|\n)(function\s+[A-Za-z0-9_$]+\s*\([^)]*\)\s*\{)/g,
-    '$1<span class="function-line">$2</span>'
+    '$1<span class="function-line" data-select-type="brace">$2</span>'
   );
+
+  html = html.replace(
+    /(^|\n)(\.[A-Za-z0-9_-]+\s*\{)/g,
+    '$1<span class="function-line" data-select-type="brace">$2</span>'
+  );
+
+  html = html.replace(
+    /(^|\n)(#[A-Za-z0-9_-]+\s*\{)/g,
+    '$1<span class="function-line" data-select-type="brace">$2</span>'
+  );
+
+  return html;
 }
 
 function escapeHTML(text) {
