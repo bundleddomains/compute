@@ -323,29 +323,41 @@ body.unified-mode {
 }
 
 .block-editor {
-  width: 100%;
-  min-height: 220px;
-  height: auto;
-  box-sizing: border-box;
-  display: block;
-  margin: 0;
-  padding: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  font: inherit;
-  font-family: inherit;
-  line-height: 1.55;
-  color: inherit;
-  resize: none;
-  overflow: hidden;
-  appearance: none;
-  -webkit-appearance: none;
-  border-radius: 0;
-  user-select: text;
-  -webkit-user-select: text;
-  touch-action: auto;
-  caret-color: #111;
+  width:177.78%;
+  min-height:220px;
+  height:auto;
+  box-sizing:border-box;
+  display:block;
+  margin:0;
+  padding:0;
+  border:none;
+  outline:none;
+  background:transparent;
+
+  font:inherit;
+  font-family:inherit;
+
+  font-size:16px;
+
+  transform:scale(.5625);
+  transform-origin:top left;
+
+  line-height:1.55;
+  color:inherit;
+
+  resize:none;
+  overflow:hidden;
+
+  appearance:none;
+  -webkit-appearance:none;
+  border-radius:0;
+
+  user-select:text;
+  -webkit-user-select:text;
+
+  touch-action:auto;
+
+  caret-color:#111;
 }
 
 .code-block.editing-block textarea {
