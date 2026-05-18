@@ -1,6 +1,13 @@
+html{
+  -webkit-text-size-adjust:100%;
+  touch-action:none;
+  overscroll-behavior:none;
+}
+
 .insert-gap{
   height:42px;
   width:100%;
+  touch-action:none;
 }
 
 .function-line{
@@ -25,6 +32,9 @@ body {
   min-height: 100vh;
   font-family: system-ui, sans-serif;
   overflow: hidden;
+  -webkit-text-size-adjust:100%;
+  touch-action:none;
+  overscroll-behavior:none;
 }
 
 body.unified-mode {
@@ -38,6 +48,8 @@ body.unified-mode {
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+  touch-action:none;
+  overscroll-behavior:none;
 }
 
 .status{
@@ -51,7 +63,9 @@ body.unified-mode {
   color:rgba(0,0,0,.35);
   cursor:pointer;
   user-select:none;
+  -webkit-user-select:none;
   transition:color .22s ease, text-shadow .22s ease, opacity .45s ease;
+  touch-action:manipulation;
 }
 
 .status.status-green{
@@ -82,6 +96,9 @@ body.unified-mode {
   background: rgba(255,255,255,0.38);
   z-index: 10;
   -webkit-overflow-scrolling: touch;
+  -webkit-text-size-adjust:100%;
+  touch-action:pan-y;
+  overscroll-behavior:contain;
 }
 
 .scene {
@@ -93,6 +110,7 @@ body.unified-mode {
   z-index: 4;
   background: transparent;
   overflow: hidden;
+  touch-action:none;
 }
 
 .front-art-layer{
@@ -138,6 +156,7 @@ body.unified-mode {
   z-index:5;
   cursor:pointer;
   transition:opacity .32s ease, transform .32s ease;
+  touch-action:manipulation;
 }
 
 .stack.fade-out-start{
@@ -183,6 +202,7 @@ body.unified-mode {
   color: rgba(0,0,0,0.22);
   pointer-events: none;
   user-select: none;
+  -webkit-user-select:none;
   z-index:2;
 }
 
@@ -247,6 +267,7 @@ body.unified-mode {
   padding:8px 10px;
   border-radius:14px;
   transition:color .22s ease, background .22s ease, text-shadow .22s ease, transform .18s ease, opacity .22s ease;
+  touch-action:manipulation;
 }
 
 .center-word:active{
@@ -339,6 +360,7 @@ body.unified-mode {
   letter-spacing: 0.12em;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select:none;
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
@@ -470,6 +492,7 @@ body.unified-mode .code-block {
   font-size: 10px;
   font-weight: 900;
   cursor: pointer;
+  touch-action:manipulation;
 }
 
 .type-tool.active-tool {
