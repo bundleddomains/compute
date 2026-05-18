@@ -3,17 +3,9 @@ const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 const status = document.getElementById("status");
 
-document.addEventListener("gesturestart", (e) => {
-  e.preventDefault();
-});
-
-document.addEventListener("gesturechange", (e) => {
-  e.preventDefault();
-});
-
-document.addEventListener("gestureend", (e) => {
-  e.preventDefault();
-});
+document.addEventListener("gesturestart", e => e.preventDefault());
+document.addEventListener("gesturechange", e => e.preventDefault());
+document.addEventListener("gestureend", e => e.preventDefault());
 
 let activeType = null;
 let currentParts = [];
@@ -121,17 +113,10 @@ function pushCleanHTML(parts, html) {
   const cleanedHTML = cleanHTMLShell(html);
   if (!cleanedHTML) return;
 
-  if (isHeadTag(cleanedHTML)) {
-    parts.push({
-      type: "head",
-      content: cleanedHTML
-    });
-  } else {
-    parts.push({
-      type: "html",
-      content: cleanedHTML
-    });
-  }
+  parts.push({
+    type: isHeadTag(cleanedHTML) ? "head" : "html",
+    content: cleanedHTML
+  });
 }
 
 function isStandaloneJS(text) {
@@ -171,10 +156,7 @@ function splitCode(text) {
 
   while ((match = regex.exec(text)) !== null) {
     const before = text.slice(lastIndex, match.index).trim();
-
-    if (before) {
-      pushCleanHTML(parts, before);
-    }
+    if (before) pushCleanHTML(parts, before);
 
     const full = match[0];
 
@@ -217,10 +199,7 @@ function splitCode(text) {
   }
 
   const after = text.slice(lastIndex).trim();
-
-  if (after) {
-    pushCleanHTML(parts, after);
-  }
+  if (after) pushCleanHTML(parts, after);
 
   return parts;
 }
@@ -254,9 +233,7 @@ function insertEmptyBlock(index) {
 
   requestAnimationFrame(() => {
     const block = codeView.querySelector(`.code-block[data-index="${index}"]`);
-    if (block) {
-      convertBlockToTextarea(block, 0, 0);
-    }
+    if (block) convertBlockToTextarea(block, 0, 0);
   });
 }
 
@@ -272,25 +249,17 @@ function buildFullFile() {
 
     if (part.type === "head") {
       headParts.push(content);
-    }
-
-    else if (part.type === "css") {
+    } else if (part.type === "css") {
       headParts.push(`<style>
 ${content}
 </style>`);
-    }
-
-    else if (part.type === "js") {
+    } else if (part.type === "js") {
       bodyParts.push(`<script>
 ${content}
 </script>`);
-    }
-
-    else if (part.type === "hidden") {
+    } else if (part.type === "hidden") {
       bodyParts.push(content);
-    }
-
-    else {
+    } else {
       bodyParts.push(content);
     }
   });
@@ -336,9 +305,7 @@ function getTextOffset(root, node, offset) {
   while (walker.nextNode()) {
     const textNode = walker.currentNode;
 
-    if (textNode === node) {
-      return total + offset;
-    }
+    if (textNode === node) return total + offset;
 
     total += textNode.textContent.length;
   }
@@ -361,15 +328,10 @@ function makeSelectBox() {
 function updateSelectBox(x1, y1, x2, y2) {
   if (!selectBox) return;
 
-  const left = Math.min(x1, x2);
-  const top = Math.min(y1, y2);
-  const width = Math.abs(x2 - x1);
-  const height = Math.abs(y2 - y1);
-
-  selectBox.style.left = left + "px";
-  selectBox.style.top = top + "px";
-  selectBox.style.width = width + "px";
-  selectBox.style.height = height + "px";
+  selectBox.style.left = Math.min(x1, x2) + "px";
+  selectBox.style.top = Math.min(y1, y2) + "px";
+  selectBox.style.width = Math.abs(x2 - x1) + "px";
+  selectBox.style.height = Math.abs(y2 - y1) + "px";
 }
 
 function scheduleSelectBoxUpdate(x1, y1, x2, y2) {
@@ -658,6 +620,82 @@ function enableInsertGapSwipe() {
   });
 }
 
+function findMatchingFunctionEnd(text, startIndex) {
+  const openIndex = text.indexOf("{", startIndex);
+  if (openIndex === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let stringChar = "";
+  let escaped = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = openIndex; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (inLineComment) {
+      if (char === "\n") inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (char === "*" && next === "/") {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (char === stringChar) {
+        inString = false;
+        stringChar = "";
+      }
+
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+
+    if (char === "\"" || char === "'" || char === "`") {
+      inString = true;
+      stringChar = char;
+      continue;
+    }
+
+    if (char === "{") depth++;
+    if (char === "}") depth--;
+
+    if (depth === 0) {
+      return i + 1;
+    }
+  }
+
+  return null;
+}
+
 function enableFunctionLineTap() {
   const labels = [...codeView.querySelectorAll(".function-line")];
 
@@ -684,12 +722,15 @@ function enableFunctionLineTap() {
 
       const pre = block.querySelector("pre");
       const text = pre ? pre.textContent : "";
-      const functionName = label.textContent.trim();
-      const start = text.indexOf(functionName);
-      const safeStart = Math.max(0, start);
-      const safeEnd = Math.max(0, start + functionName.length);
+      const functionHeader = label.textContent.trim();
 
-      convertBlockToTextarea(block, safeStart, safeEnd);
+      const start = text.indexOf(functionHeader);
+      if (start === -1) return;
+
+      const end = findMatchingFunctionEnd(text, start);
+      if (end === null) return;
+
+      convertBlockToTextarea(block, start, end);
     });
   });
 }
@@ -787,10 +828,7 @@ function enableBlockSelectionAndErase() {
       dy = e.clientY - startY;
 
       const distance = Math.hypot(dx, dy);
-
-      if (distance > 2) {
-        moved = true;
-      }
+      if (distance > 2) moved = true;
 
       if (boxSelecting) {
         e.preventDefault();
@@ -822,7 +860,6 @@ function enableBlockSelectionAndErase() {
 
         if (pre && selectBox) {
           const box = selectBox.getBoundingClientRect();
-
           const startRange = rangeFromPoint(box.left, box.top);
           const endRange = rangeFromPoint(box.right, box.bottom);
 
@@ -881,7 +918,6 @@ function enableBlockSelectionAndErase() {
 
       if (distance > eraseThreshold) {
         const index = Number(block.dataset.index);
-
         block.classList.add("erasing-block");
 
         setTimeout(() => {
