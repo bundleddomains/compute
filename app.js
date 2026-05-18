@@ -3,6 +3,18 @@ const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
 const status = document.getElementById("status");
 
+document.addEventListener("gesturestart", (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener("gesturechange", (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener("gestureend", (e) => {
+  e.preventDefault();
+});
+
 let activeType = null;
 let currentParts = [];
 let selectBox = null;
@@ -169,10 +181,7 @@ function splitCode(text) {
     if (/^<style/i.test(full)) {
       parts.push({
         type: "css",
-        content: full
-          .replace(/<style\b[^>]*>/i, "")
-          .replace(/<\/style>/i, "")
-          .trim()
+        content: full.replace(/<style\b[^>]*>/i, "").replace(/<\/style>/i, "").trim()
       });
     }
 
@@ -185,10 +194,7 @@ function splitCode(text) {
       } else {
         parts.push({
           type: "js",
-          content: full
-            .replace(/<script\b[^>]*>/i, "")
-            .replace(/<\/script>/i, "")
-            .trim()
+          content: full.replace(/<script\b[^>]*>/i, "").replace(/<\/script>/i, "").trim()
         });
       }
     }
@@ -716,8 +722,7 @@ function enableBlockSelectionAndErase() {
       dy = 0;
       moved = false;
 
-      const alreadySelected =
-        block.classList.contains("selected-block");
+      const alreadySelected = block.classList.contains("selected-block");
 
       if (alreadySelected) {
         e.preventDefault();
@@ -727,8 +732,6 @@ function enableBlockSelectionAndErase() {
         dragging = false;
 
         makeSelectBox();
-
-        /* instant first draw */
         updateSelectBox(startX, startY, startX, startY);
 
         block.setPointerCapture(e.pointerId);
@@ -757,8 +760,6 @@ function enableBlockSelectionAndErase() {
 
       if (boxSelecting) {
         e.preventDefault();
-
-        /* smoother live update */
         scheduleSelectBoxUpdate(startX, startY, e.clientX, e.clientY);
         return;
       }
@@ -781,8 +782,6 @@ function enableBlockSelectionAndErase() {
         e.preventDefault();
 
         boxSelecting = false;
-
-        /* final exact draw before reading box */
         updateSelectBox(startX, startY, e.clientX, e.clientY);
 
         const pre = block.querySelector("pre");
@@ -794,17 +793,8 @@ function enableBlockSelectionAndErase() {
           const endRange = rangeFromPoint(box.right, box.bottom);
 
           if (startRange && endRange) {
-            let start = getTextOffset(
-              pre,
-              startRange.startContainer,
-              startRange.startOffset
-            );
-
-            let end = getTextOffset(
-              pre,
-              endRange.startContainer,
-              endRange.startOffset
-            );
+            let start = getTextOffset(pre, startRange.startContainer, startRange.startOffset);
+            let end = getTextOffset(pre, endRange.startContainer, endRange.startOffset);
 
             if (start > end) {
               const temp = start;
