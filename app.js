@@ -275,6 +275,39 @@ ${bodyParts.join("\n\n")}
 </html>`;
 }
 
+function getUnifiedCleanText() {
+  return buildFullFile()
+    .replace(/\n\s*\n\s*\n/g, "\n\n")
+    .trim();
+}
+
+async function copyFinalBuild() {
+  closeOtherEditors();
+
+  const finalCode = getUnifiedCleanText();
+
+  try {
+    await navigator.clipboard.writeText(finalCode);
+
+    if (status) {
+      status.textContent = "COPIED";
+      status.classList.remove("status-faded");
+      status.classList.add("status-green");
+    }
+
+    const copyBtn = document.querySelector(".copy-final-btn");
+    if (copyBtn) {
+      copyBtn.textContent = "COPIED";
+      setTimeout(() => {
+        copyBtn.textContent = "COPY ALL";
+      }, 900);
+    }
+
+  } catch (err) {
+    alert("Copy failed. Try again.");
+  }
+}
+
 function clearTextSelection() {
   const selection = window.getSelection();
   if (selection) selection.removeAllRanges();
@@ -509,13 +542,42 @@ function buildTypeToolbar() {
   codeView.appendChild(bar);
 }
 
-function getUnifiedCleanText() {
-  return buildFullFile()
-    .replace(/\n\s*\n\s*\n/g, "\n\n")
-    .trim();
+function buildCopyFinalButton() {
+  const button = document.createElement("button");
+  button.className = "copy-final-btn";
+  button.textContent = "COPY ALL";
+
+  button.style.position = "fixed";
+  button.style.right = "18px";
+  button.style.bottom = "76px";
+  button.style.zIndex = "90";
+  button.style.border = "0";
+  button.style.borderRadius = "999px";
+  button.style.padding = "12px 16px";
+  button.style.background = "#111";
+  button.style.color = "white";
+  button.style.fontSize = "11px";
+  button.style.fontWeight = "900";
+  button.style.letterSpacing = ".08em";
+  button.style.boxShadow = "0 10px 24px rgba(0,0,0,.18)";
+  button.style.cursor = "pointer";
+  button.style.touchAction = "manipulation";
+
+  button.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+  });
+
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+    copyFinalBuild();
+  });
+
+  return button;
 }
 
 function enterUnifiedMode() {
+  closeOtherEditors();
+
   activeType = null;
   document.body.classList.add("unified-mode");
   clearTextSelection();
@@ -525,6 +587,8 @@ function enterUnifiedMode() {
   codeView.innerHTML = `
     <pre>${escapeHTML(clean)}</pre>
   `;
+
+  codeView.appendChild(buildCopyFinalButton());
 
   buildTypeToolbar();
   enableToolbarSwipe();
