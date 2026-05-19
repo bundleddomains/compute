@@ -136,12 +136,39 @@ function isStandaloneJS(text) {
   return hasJSStructure && startsLikeJS && !startsLikeHTML;
 }
 
+function isStandaloneCSS(text) {
+  const trimmed = text.trim();
+
+  const startsLikeHTML =
+    /^<!doctype|^<html|^<head|^<body|^<div|^<style|^<script|^<svg/i.test(trimmed);
+
+  const hasCSSBlock =
+    /[.#a-zA-Z0-9_*:\-\s,[\]="'>]+?\s*\{[\s\S]*?\}/.test(trimmed);
+
+  const hasCSSProps =
+    /[a-z-]+\s*:\s*[^;]+;/.test(trimmed);
+
+  const hasJSStructure =
+    /\bfunction\s+[A-Za-z0-9_$]+\s*\(/.test(trimmed) ||
+    /\bdocument\.getElementById\b/.test(trimmed) ||
+    /\bconst\s+[A-Za-z0-9_$]+\s*=/.test(trimmed);
+
+  return hasCSSBlock && hasCSSProps && !startsLikeHTML && !hasJSStructure;
+}
+
 function splitCode(text) {
   text = removePasteJunk(text);
 
   if (isStandaloneJS(text)) {
     return [{
       type: "js",
+      content: text.trim()
+    }];
+  }
+
+  if (isStandaloneCSS(text)) {
+    return [{
+      type: "css",
       content: text.trim()
     }];
   }
@@ -276,6 +303,23 @@ ${bodyParts.join("\n\n")}
 }
 
 function getUnifiedCleanText() {
+  const usableParts = currentParts.filter(part => {
+    return part && part.content && part.content.trim();
+  });
+
+  if (usableParts.length === 1) {
+    const only = usableParts[0];
+
+    if (
+      only.type === "js" ||
+      only.type === "css" ||
+      only.type === "html" ||
+      only.type === "svg"
+    ) {
+      return only.content.trim();
+    }
+  }
+
   return buildFullFile()
     .replace(/\n\s*\n\s*\n/g, "\n\n")
     .trim();
