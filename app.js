@@ -918,31 +918,35 @@ function enableBlockSelectionAndErase() {
   return;
 }
 
-    block.addEventListener("pointermove", (e) => {
-      if (!blockIsActiveForEditing()) return;
-      if (block.classList.contains("editing-block")) return;
+    block.addEventListener("pointerdown", (e) => {
+  if (!blockIsActiveForEditing()) return;
+  if (block.classList.contains("editing-block")) return;
 
-      dx = e.clientX - startX;
-      dy = e.clientY - startY;
+  startX = e.clientX;
+  startY = e.clientY;
+  dx = 0;
+  dy = 0;
+  moved = false;
 
-      const distance = Math.hypot(dx, dy);
-      if (distance > 2) moved = true;
+  const alreadySelected = block.classList.contains("selected-block");
 
-      if (boxSelecting) {
-        e.preventDefault();
-        scheduleSelectBoxUpdate(startX, startY, e.clientX, e.clientY);
-        return;
-      }
+  if (alreadySelected) {
+    e.preventDefault();
+    clearTextSelection();
 
-      if (!dragging) return;
+    boxSelecting = false;
+    dragging = true;
 
-      if (distance > 18) {
-        moved = true;
-        block.classList.add("dragging-block");
-        block.style.transform = `translate(${dx}px, ${dy}px)`;
-        block.style.opacity = "0.82";
-      }
-    });
+    block.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  boxSelecting = false;
+  dragging = true;
+
+  block.setPointerCapture(e.pointerId);
+  clearTextSelection();
+});
 
     block.addEventListener("pointerup", (e) => {
       if (!blockIsActiveForEditing()) return;
