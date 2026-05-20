@@ -579,10 +579,7 @@ body.unified-mode .code-block {
 .code-block,
 .code-block pre,
 .code-section{
-  user-select:none;
-  -webkit-user-select:none;
-  caret-color:transparent;
-  cursor:grab;
+  cursor:default;
 }
 
 .code-block.selected-block,
