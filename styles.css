@@ -575,3 +575,32 @@ body.unified-mode .code-block {
 .copy-final-btn:active{
   transform:scale(.94);
 }
+
+.code-block,
+.code-block pre,
+.code-section{
+  user-select:none;
+  -webkit-user-select:none;
+  caret-color:transparent;
+  cursor:grab;
+}
+
+.code-block.selected-block,
+.code-block.selected-block pre{
+  user-select:none;
+  -webkit-user-select:none;
+  caret-color:transparent;
+  cursor:grab;
+}
+
+.code-block.dragging-block,
+.code-block.dragging-block pre{
+  cursor:grabbing;
+}
+
+.block-editor{
+  user-select:text;
+  -webkit-user-select:text;
+  caret-color:auto;
+  cursor:text;
+}
