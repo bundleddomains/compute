@@ -160,17 +160,11 @@ function splitCode(text) {
   text = removePasteJunk(text);
 
   if (isStandaloneJS(text)) {
-    return [{
-      type: "js",
-      content: text.trim()
-    }];
+    return [{ type: "js", content: text.trim() }];
   }
 
   if (isStandaloneCSS(text)) {
-    return [{
-      type: "css",
-      content: text.trim()
-    }];
+    return [{ type: "css", content: text.trim() }];
   }
 
   const parts = [];
@@ -192,9 +186,7 @@ function splitCode(text) {
         type: "css",
         content: full.replace(/<style\b[^>]*>/i, "").replace(/<\/style>/i, "").trim()
       });
-    }
-
-    else if (/^<script/i.test(full)) {
+    } else if (/^<script/i.test(full)) {
       if (/\bsrc\s*=/.test(full)) {
         parts.push({
           type: "hidden",
@@ -206,16 +198,12 @@ function splitCode(text) {
           content: full.replace(/<script\b[^>]*>/i, "").replace(/<\/script>/i, "").trim()
         });
       }
-    }
-
-    else if (/^<svg/i.test(full)) {
+    } else if (/^<svg/i.test(full)) {
       parts.push({
         type: "svg",
         content: full.trim()
       });
-    }
-
-    else if (/^<meta/i.test(full) || /^<link/i.test(full) || /^<title/i.test(full)) {
+    } else if (/^<meta/i.test(full) || /^<link/i.test(full) || /^<title/i.test(full)) {
       parts.push({
         type: "head",
         content: full.trim()
@@ -232,16 +220,10 @@ function splitCode(text) {
 }
 
 function guessInsertType(index) {
-  if (activeType && activeType !== "head" && activeType !== "hidden") {
-    return activeType;
-  }
+  if (activeType) return activeType;
 
   const before = currentParts[index - 1];
-
-  if (before) {
-    if (before.type === "head" || before.type === "hidden") return "html";
-    return before.type;
-  }
+  if (before) return before.type;
 
   return "html";
 }
@@ -314,7 +296,9 @@ function getUnifiedCleanText() {
       only.type === "js" ||
       only.type === "css" ||
       only.type === "html" ||
-      only.type === "svg"
+      only.type === "svg" ||
+      only.type === "head" ||
+      only.type === "hidden"
     ) {
       return only.content.trim();
     }
@@ -470,7 +454,6 @@ function saveTextareaBlock(block) {
 function convertBlockToTextarea(block, start = 0, end = 0) {
   if (block.classList.contains("editing-block")) return;
 
-  // 🔥 SAVE SCROLL POSITION (before DOM change)
   const scrollY = codeView.scrollTop;
 
   const pre = block.querySelector("pre");
@@ -509,25 +492,11 @@ function convertBlockToTextarea(block, start = 0, end = 0) {
     saveTextareaBlock(block);
   });
 
-  // 🔥 IMPORTANT FIX: prevent scroll jump on focus + restore position
   requestAnimationFrame(() => {
     editor.focus({ preventScroll: true });
     autoSizeEditor(editor);
     editor.setSelectionRange(start, end);
-
-    // restore scroll after DOM mutation
     codeView.scrollTop = scrollY;
-  });
-}
-
-  editor.addEventListener("blur", () => {
-    saveTextareaBlock(block);
-  });
-
-  requestAnimationFrame(() => {
-    editor.focus({ preventScroll: true });
-    autoSizeEditor(editor);
-    editor.setSelectionRange(start, end);
   });
 }
 
@@ -588,11 +557,11 @@ function buildTypeToolbar() {
   const bar = document.createElement("div");
   bar.className = "type-toolbar";
 
-  ["html", "css", "js", "svg"].forEach(type => {
+  ["head", "html", "css", "js", "svg", "hidden"].forEach(type => {
     const button = document.createElement("button");
     button.className = `type-tool type-tool-${type}`;
     button.dataset.type = type;
-    button.textContent = type.toUpperCase();
+    button.textContent = type === "hidden" ? "SRC" : type.toUpperCase();
 
     button.addEventListener("click", () => {
       setActiveType(type);
@@ -828,11 +797,6 @@ function enableFunctionLineTap() {
   labels.forEach(label => {
     label.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
-    });
-
-    label.addEventListener("pointerdown", (e) => {
-  e.stopPropagation();
-});
 
       const block = label.closest(".code-block");
       if (!block) return;
@@ -1083,6 +1047,11 @@ function enableBlockSelectionAndErase() {
   });
 }
 
+function getDisplayType(type) {
+  if (type === "hidden") return "script-src";
+  return type;
+}
+
 function renderBlockMode(animated = false) {
   closeOtherEditors();
 
@@ -1092,7 +1061,6 @@ function renderBlockMode(animated = false) {
   codeView.classList.remove("hidden");
   codeView.classList.toggle("fade-in-blocks", animated);
 
-  // 🧠 more stable anchor than scrollTop alone
   const scrollY = codeView.scrollTop;
   const activeElement = document.activeElement;
 
@@ -1100,10 +1068,12 @@ function renderBlockMode(animated = false) {
 
   currentParts.forEach((part, index) => {
     if (!part) return;
-    if (part.type === "head" || part.type === "hidden") return;
+
+    const displayType = getDisplayType(part.type);
 
     html += `
       <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
+        <div class="section-label">${displayType}</div>
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
             <pre>${renderCodeHTML(part.content)}</pre>
@@ -1119,11 +1089,9 @@ function renderBlockMode(animated = false) {
 
   codeView.innerHTML = html;
 
-  // 🔥 restore scroll WITHOUT jump
   requestAnimationFrame(() => {
     codeView.scrollTop = scrollY;
 
-    // 🧠 optional: prevents iOS scroll "snap back"
     if (activeElement && activeElement.blur) {
       activeElement.blur();
     }
