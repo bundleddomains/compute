@@ -830,9 +830,9 @@ function enableFunctionLineTap() {
       e.stopPropagation();
     });
 
-    label.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    label.addEventListener("pointerdown", (e) => {
+  e.stopPropagation();
+});
 
       const block = label.closest(".code-block");
       if (!block) return;
