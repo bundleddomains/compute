@@ -410,30 +410,21 @@ body.unified-mode {
   border:none;
   outline:none;
   background:transparent;
-
   font:inherit;
   font-family:inherit;
-
   font-size:16px;
-
   transform:scale(.5625);
   transform-origin:top left;
-
   line-height:1.55;
   color:inherit;
-
   resize:none;
   overflow:hidden;
-
   appearance:none;
   -webkit-appearance:none;
   border-radius:0;
-
   user-select:text;
   -webkit-user-select:text;
-
   touch-action:auto;
-
   caret-color:#111;
 }
 
@@ -465,10 +456,10 @@ body.unified-mode {
 .hidden-label { color: rgba(80, 80, 80, 0.9); }
 
 .code-block {
-  width: 68%;
-  max-width: 330px;
+  width: 76%;
+  max-width: 360px;
   margin: 0 auto 28px;
-  padding: 18px 22px;
+  padding: 14px 12px;
   border-radius: 16px;
   border: 1px solid rgba(120,120,120,0.10);
   background: rgba(255,255,255,0.46);
@@ -478,6 +469,60 @@ body.unified-mode {
   transition: opacity 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.code-lines{
+  width:100%;
+}
+
+.code-line{
+  display:grid;
+  grid-template-columns:32px minmax(0, 1fr);
+  gap:7px;
+  align-items:start;
+  border-radius:10px;
+  padding:1px 2px;
+  transition:background .14s ease;
+}
+
+.code-line pre{
+  margin:0;
+  white-space:pre;
+  overflow-x:auto;
+  word-break:normal;
+  line-height:1.55;
+  min-width:0;
+}
+
+.line-number-box{
+  width:25px;
+  min-height:17px;
+  border:0;
+  border-radius:7px;
+  background:rgba(92,65,35,.18);
+  color:rgba(45,33,24,.58);
+  font-size:8px;
+  font-weight:900;
+  font-family:inherit;
+  line-height:1;
+  padding:0;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.line-number-box:active{
+  transform:scale(.94);
+}
+
+.code-line.selected-line{
+  background:rgba(150,105,55,.18);
+}
+
+.code-line.selected-line .line-number-box{
+  background:#111;
+  color:white;
 }
 
 .code-block pre {
@@ -549,10 +594,13 @@ body.unified-mode .code-view {
   white-space: pre-wrap;
 }
 
-body.unified-mode .section-label{
+body.unified-mode .section-label,
+body.unified-mode .line-number-box{
   display:none !important;
 }
 
+body.unified-mode .code-lines,
+body.unified-mode .code-line,
 body.unified-mode .code-section,
 body.unified-mode .code-block {
   display: contents !important;
@@ -636,21 +684,15 @@ body.unified-mode .code-block {
   right:18px;
   bottom:76px;
   z-index:80;
-
   border:0;
   border-radius:999px;
-
   padding:12px 16px;
-
   background:#111;
   color:white;
-
   font-size:11px;
   font-weight:900;
   letter-spacing:.08em;
-
   box-shadow:0 10px 24px rgba(0,0,0,.18);
-
   cursor:pointer;
   touch-action:manipulation;
 }
