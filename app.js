@@ -470,6 +470,9 @@ function saveTextareaBlock(block) {
 function convertBlockToTextarea(block, start = 0, end = 0) {
   if (block.classList.contains("editing-block")) return;
 
+  // 🔥 SAVE SCROLL POSITION (before DOM change)
+  const scrollY = codeView.scrollTop;
+
   const pre = block.querySelector("pre");
   if (!pre) return;
 
@@ -501,6 +504,21 @@ function convertBlockToTextarea(block, start = 0, end = 0) {
       currentParts[index].content = editor.value;
     }
   });
+
+  editor.addEventListener("blur", () => {
+    saveTextareaBlock(block);
+  });
+
+  // 🔥 IMPORTANT FIX: prevent scroll jump on focus + restore position
+  requestAnimationFrame(() => {
+    editor.focus({ preventScroll: true });
+    autoSizeEditor(editor);
+    editor.setSelectionRange(start, end);
+
+    // restore scroll after DOM mutation
+    codeView.scrollTop = scrollY;
+  });
+}
 
   editor.addEventListener("blur", () => {
     saveTextareaBlock(block);
