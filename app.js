@@ -813,6 +813,7 @@ function enableFunctionLineTap() {
     });
 
     label.addEventListener("click", (e) => {
+      e.preventDefault();
       e.stopPropagation();
 
       const block = label.closest(".code-block");
