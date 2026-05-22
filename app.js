@@ -1073,9 +1073,14 @@ function renderBlockMode(animated = false) {
   codeView.classList.remove("hidden");
   codeView.classList.toggle("fade-in-blocks", animated);
 
+  // 🧠 preserve scroll so it doesn't jump
+  const scrollTop = codeView.scrollTop;
+
   let html = "";
 
   currentParts.forEach((part, index) => {
+    if (!part) return; // IMPORTANT: prevents index collapse bugs
+
     if (part.type === "head" || part.type === "hidden") return;
 
     html += `
@@ -1093,8 +1098,15 @@ function renderBlockMode(animated = false) {
     `;
   });
 
+  // 🔥 DOM rebuild
   codeView.innerHTML = html;
 
+  // 🧠 restore scroll immediately after layout paints
+  requestAnimationFrame(() => {
+    codeView.scrollTop = scrollTop;
+  });
+
+  // UI rebuilds
   buildTypeToolbar();
   enableToolbarSwipe();
   enableInsertGapSwipe();
