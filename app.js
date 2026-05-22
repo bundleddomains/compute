@@ -507,7 +507,7 @@ function convertBlockToTextarea(block, start = 0, end = 0) {
   });
 
   requestAnimationFrame(() => {
-    editor.focus();
+    editor.focus({ preventScroll: true });
     autoSizeEditor(editor);
     editor.setSelectionRange(start, end);
   });
