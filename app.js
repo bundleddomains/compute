@@ -11,6 +11,7 @@ let activeType = null;
 let currentParts = [];
 let selectBox = null;
 let statusWasPressed = false;
+let selectedLines = new Set();
 
 let selectBoxRAF = null;
 let latestSelectBoxPoint = null;
@@ -69,6 +70,7 @@ async function handleWholeScreenPaste(e) {
 
     setTimeout(() => {
       currentParts = splitCode(text);
+      selectedLines = new Set();
 
       if (statusWasPressed && status) {
         status.classList.add("status-faded");
@@ -447,20 +449,18 @@ function saveTextareaBlock(block) {
   }
 
   block.classList.remove("editing-block", "selected-block");
-  block.innerHTML = `<pre>${renderCodeHTML(newText)}</pre>`;
+  block.innerHTML = renderCodeBlockHTML(newText, index);
   clearTextSelection();
+  enableLineNumberToggle();
+  enableFunctionLineTap();
 }
 
 function convertBlockToTextarea(block, start = 0, end = 0) {
   if (block.classList.contains("editing-block")) return;
 
   const scrollY = codeView.scrollTop;
-
-  const pre = block.querySelector("pre");
-  if (!pre) return;
-
   const index = Number(block.dataset.index);
-  const text = pre.textContent;
+  const text = currentParts[index] ? currentParts[index].content : block.textContent;
 
   start = clampNumber(start, 0, text.length);
   end = clampNumber(end, 0, text.length);
@@ -801,6 +801,10 @@ function enableFunctionLineTap() {
       const block = label.closest(".code-block");
       if (!block) return;
 
+      const index = Number(block.dataset.index);
+      const text = currentParts[index] ? currentParts[index].content : "";
+      const functionHeader = label.textContent.trim();
+
       closeOtherEditors(block);
 
       codeView.querySelectorAll(".code-block.selected-block").forEach(other => {
@@ -810,10 +814,6 @@ function enableFunctionLineTap() {
       });
 
       block.classList.add("selected-block");
-
-      const pre = block.querySelector("pre");
-      const text = pre ? pre.textContent : "";
-      const functionHeader = label.textContent.trim();
 
       const start = text.indexOf(functionHeader);
       if (start === -1) return;
@@ -826,6 +826,33 @@ function enableFunctionLineTap() {
   });
 }
 
+function enableLineNumberToggle() {
+  const buttons = [...codeView.querySelectorAll(".line-number-box")];
+
+  buttons.forEach(button => {
+    button.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
+
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      const block = button.dataset.block;
+      const line = button.dataset.line;
+      const key = `${block}:${line}`;
+
+      if (selectedLines.has(key)) {
+        selectedLines.delete(key);
+      } else {
+        selectedLines.add(key);
+      }
+
+      const row = button.closest(".code-line");
+      if (row) row.classList.toggle("selected-line", selectedLines.has(key));
+    });
+  });
+}
+
 function enableSectionTapSelect() {
   const sections = [...codeView.querySelectorAll(".code-section")];
 
@@ -834,6 +861,7 @@ function enableSectionTapSelect() {
       if (document.body.classList.contains("unified-mode")) return;
       if (e.target.closest(".block-editor")) return;
       if (e.target.closest(".function-line")) return;
+      if (e.target.closest(".line-number-box")) return;
 
       const block = section.querySelector(".code-block");
       if (!block) return;
@@ -879,6 +907,7 @@ function enableBlockSelectionAndErase() {
     }
 
     block.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".line-number-box")) return;
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
 
@@ -947,16 +976,16 @@ function enableBlockSelectionAndErase() {
         boxSelecting = false;
         updateSelectBox(startX, startY, e.clientX, e.clientY);
 
-        const pre = block.querySelector("pre");
+        const codeLines = block.querySelector(".code-lines");
 
-        if (pre && selectBox) {
+        if (codeLines && selectBox) {
           const box = selectBox.getBoundingClientRect();
           const startRange = rangeFromPoint(box.left, box.top);
           const endRange = rangeFromPoint(box.right, box.bottom);
 
           if (startRange && endRange) {
-            let start = getTextOffset(pre, startRange.startContainer, startRange.startOffset);
-            let end = getTextOffset(pre, endRange.startContainer, endRange.startOffset);
+            let start = getTextOffset(codeLines, startRange.startContainer, startRange.startOffset);
+            let end = getTextOffset(codeLines, endRange.startContainer, endRange.startOffset);
 
             if (start > end) {
               const temp = start;
@@ -1014,6 +1043,7 @@ function enableBlockSelectionAndErase() {
         setTimeout(() => {
           currentParts[index] = null;
           currentParts = currentParts.filter(Boolean);
+          cleanSelectedLines();
           renderBlockMode();
         }, 180);
 
@@ -1047,6 +1077,22 @@ function enableBlockSelectionAndErase() {
   });
 }
 
+function cleanSelectedLines() {
+  const validKeys = new Set();
+
+  currentParts.forEach((part, blockIndex) => {
+    if (!part || typeof part.content !== "string") return;
+
+    const lineCount = part.content.split("\n").length;
+
+    for (let i = 1; i <= lineCount; i++) {
+      validKeys.add(`${blockIndex}:${i}`);
+    }
+  });
+
+  selectedLines = new Set([...selectedLines].filter(key => validKeys.has(key)));
+}
+
 function getDisplayType(type) {
   if (type === "hidden") return "script-src";
   return type;
@@ -1060,6 +1106,8 @@ function renderBlockMode(animated = false) {
   scene.classList.add("hidden");
   codeView.classList.remove("hidden");
   codeView.classList.toggle("fade-in-blocks", animated);
+
+  cleanSelectedLines();
 
   const scrollY = codeView.scrollTop;
   const activeElement = document.activeElement;
@@ -1076,7 +1124,7 @@ function renderBlockMode(animated = false) {
         <div class="section-label">${displayType}</div>
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
-            <pre>${renderCodeHTML(part.content)}</pre>
+            ${renderCodeBlockHTML(part.content, index)}
           </div>
         </div>
       </section>
@@ -1103,12 +1151,35 @@ function renderBlockMode(animated = false) {
   enableBlockSelectionAndErase();
   enableSectionTapSelect();
   enableFunctionLineTap();
+  enableLineNumberToggle();
 }
 
 function renderSeparatedBlocks(text) {
   currentParts = splitCode(text);
   activeType = null;
+  selectedLines = new Set();
   renderBlockMode();
+}
+
+function renderCodeBlockHTML(text, blockIndex) {
+  const lines = String(text).split("\n");
+
+  const rows = lines.map((line, i) => {
+    const lineNumber = i + 1;
+    const key = `${blockIndex}:${lineNumber}`;
+    const selected = selectedLines.has(key) ? " selected-line" : "";
+
+    return `
+      <div class="code-line${selected}" data-line="${lineNumber}">
+        <button class="line-number-box" data-block="${blockIndex}" data-line="${lineNumber}" type="button">
+          ${lineNumber}
+        </button>
+        <pre>${renderCodeHTML(line)}</pre>
+      </div>
+    `;
+  }).join("");
+
+  return `<div class="code-lines">${rows}</div>`;
 }
 
 function renderCodeHTML(text) {
@@ -1131,7 +1202,7 @@ function renderCodeHTML(text) {
 }
 
 function escapeHTML(text) {
-  return text
+  return String(text)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
@@ -1144,6 +1215,7 @@ function startDefaultCanvas() {
   document.body.classList.remove("unified-mode");
   activeType = null;
   currentParts = [];
+  selectedLines = new Set();
   buildStartUI();
 }
 
