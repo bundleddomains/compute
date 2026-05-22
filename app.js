@@ -908,15 +908,25 @@ function enableBlockSelectionAndErase() {
       const alreadySelected = block.classList.contains("selected-block");
 
       if (alreadySelected) {
-  e.preventDefault();
-  clearTextSelection();
+        e.preventDefault();
+        clearTextSelection();
 
-  boxSelecting = false;
-  dragging = true;
+        boxSelecting = true;
+        dragging = false;
 
-  block.setPointerCapture(e.pointerId);
-  return;
-}
+        makeSelectBox();
+        updateSelectBox(startX, startY, startX, startY);
+
+        block.setPointerCapture(e.pointerId);
+        return;
+      }
+
+      boxSelecting = false;
+      dragging = true;
+
+      block.setPointerCapture(e.pointerId);
+      clearTextSelection();
+    });
 
     block.addEventListener("pointermove", (e) => {
       if (!blockIsActiveForEditing()) return;
