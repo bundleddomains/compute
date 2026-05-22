@@ -337,6 +337,53 @@ body.unified-mode {
     inset 0 1px 0 rgba(255,255,255,.26);
 }
 
+.section-label{
+  width:max-content;
+  margin:0 auto 10px;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:rgba(45,33,24,.55);
+  background:rgba(255,255,255,.38);
+  border:1px solid rgba(90,65,35,.10);
+  user-select:none;
+  -webkit-user-select:none;
+  pointer-events:none;
+}
+
+.code-section[data-type="head"] .section-label{
+  color:rgba(90,70,120,.88);
+  background:rgba(120,90,170,.10);
+}
+
+.code-section[data-type="hidden"] .section-label{
+  color:rgba(80,80,80,.88);
+  background:rgba(0,0,0,.055);
+}
+
+.code-section[data-type="html"] .section-label{
+  color:rgba(120,90,10,.9);
+  background:rgba(180,135,20,.10);
+}
+
+.code-section[data-type="css"] .section-label{
+  color:rgba(0,115,105,.9);
+  background:rgba(0,150,135,.10);
+}
+
+.code-section[data-type="js"] .section-label{
+  color:rgba(130,82,0,.9);
+  background:rgba(190,120,0,.10);
+}
+
+.code-section[data-type="svg"] .section-label{
+  color:rgba(90,60,150,.9);
+  background:rgba(90,60,150,.10);
+}
+
 .section-body{
   width:100%;
 }
@@ -414,6 +461,8 @@ body.unified-mode {
 .css-label { color: rgba(0, 115, 105, 0.9); }
 .js-label { color: rgba(130, 82, 0, 0.9); }
 .svg-label { color: rgba(90, 60, 150, 0.9); }
+.head-label { color: rgba(90, 70, 120, 0.9); }
+.hidden-label { color: rgba(80, 80, 80, 0.9); }
 
 .code-block {
   width: 68%;
@@ -500,6 +549,10 @@ body.unified-mode .code-view {
   white-space: pre-wrap;
 }
 
+body.unified-mode .section-label{
+  display:none !important;
+}
+
 body.unified-mode .code-section,
 body.unified-mode .code-block {
   display: contents !important;
@@ -518,7 +571,7 @@ body.unified-mode .code-block {
   transform: translateX(-50%);
   z-index: 40;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.72);
@@ -532,11 +585,41 @@ body.unified-mode .code-block {
 .type-tool {
   border: 0;
   border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 10px;
+  padding: 7px 9px;
+  font-size: 9px;
   font-weight: 900;
   cursor: pointer;
   touch-action:manipulation;
+}
+
+.type-tool-head{
+  color:rgba(90,70,120,.95);
+  background:rgba(120,90,170,.10);
+}
+
+.type-tool-hidden{
+  color:rgba(80,80,80,.95);
+  background:rgba(0,0,0,.055);
+}
+
+.type-tool-html{
+  color:rgba(120,90,10,.95);
+  background:rgba(180,135,20,.10);
+}
+
+.type-tool-css{
+  color:rgba(0,115,105,.95);
+  background:rgba(0,150,135,.10);
+}
+
+.type-tool-js{
+  color:rgba(130,82,0,.95);
+  background:rgba(190,120,0,.10);
+}
+
+.type-tool-svg{
+  color:rgba(90,60,150,.95);
+  background:rgba(90,60,150,.10);
 }
 
 .type-tool.active-tool {
