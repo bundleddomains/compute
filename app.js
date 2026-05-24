@@ -1245,10 +1245,10 @@ function renderBlockMode(animated = false) {
 
     const displayType = getDisplayType(part.type);
     const isExpanded = expandedBlocks.has(index);
-    const collapsedClass = isExpanded ? "" : " collapsed-section";
+    const blockMinClass = isExpanded ? "" : " minimized-block";
 
     html += `
-      <section class="code-section${collapsedClass}"
+      <section class="code-section"
         data-type="${part.type}"
         data-section-id="${part.type}-${index}"
         data-index="${index}">
@@ -1258,7 +1258,7 @@ function renderBlockMode(animated = false) {
         </div>
 
         <div class="section-body">
-          <div class="code-block type-${part.type}" data-index="${index}">
+          <div class="code-block type-${part.type}${blockMinClass}" data-index="${index}">
             ${renderCodeBlockHTML(part.content, index, !isExpanded)}
           </div>
         </div>
