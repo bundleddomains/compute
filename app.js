@@ -1373,7 +1373,7 @@ function renderCodeHTML(text) {
   );
 
 html = html.replace(
-  /(^|\n)(\s*(?:[.#][^\n{}]+|\[[^\n{}]+\])\s*\{\s*)/g,
+  /(^|\n)(\s*(?:[.#][^\n{}]+|\[[^\n{}]+\]|@keyframes\s+[^\n{}]+)\s*\{\s*)/g,
   '$1<span class="function-line" data-select-type="brace">$2</span>'
 );
 
