@@ -1441,7 +1441,7 @@ function injectCollapsedStyles() {
 
   document.head.appendChild(style);
 }
-  opacity: .74;
+  ;
 
 function startDefaultCanvas() {
   injectCollapsedStyles();
