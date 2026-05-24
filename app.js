@@ -479,19 +479,29 @@ function buildSelectedLineTools() {
   updateSelectedLineTools();
 }
 
-  tools.querySelector(".selected-erase-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    eraseSelectedLines();
-  });
 
-  document.body.appendChild(tools);
-  updateSelectedLineTools();
-}
 
 function updateSelectedLineTools() {
   const tools = document.querySelector(".selected-line-tools");
   if (!tools) return;
+
   tools.classList.toggle("show-selected-tools", selectedLines.size > 0);
+
+  const andBtn = tools.querySelector(".selected-and-btn");
+  if (!andBtn) return;
+
+  const selected = [...selectedLines].map(key => {
+    const [block, line] = key.split(":").map(Number);
+    return { block, line };
+  });
+
+  const canAnd =
+    selected.length === 2 &&
+    selected[0].block === selected[1].block &&
+    Math.abs(selected[0].line - selected[1].line) === 1;
+
+  andBtn.disabled = !canAnd;
+  andBtn.classList.toggle("and-ready", canAnd);
 }
 
 document.addEventListener("keydown", e => {
