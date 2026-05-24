@@ -1037,16 +1037,16 @@ function enableSectionTapSelect() {
       const block = section.querySelector(".code-block");
       if (!block) return;
 
-      if (!expandedBlocks.has(index)) {
-  expandedBlocks.add(index);
-  renderBlockMode();
-  return;
-}
+      if (e.target.closest(".section-label")) {
+        toggleSection(index);
+        return;
+      }
 
-if (e.target.closest(".section-label")) {
-  toggleSection(index);
-  return;
-}
+      if (!expandedBlocks.has(index)) {
+        expandedBlocks.add(index);
+        renderBlockMode();
+        return;
+      }
 
       if (block.classList.contains("editing-block")) return;
       if (activeType && getBlockType(block) !== activeType) return;
