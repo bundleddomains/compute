@@ -1192,6 +1192,7 @@ function renderBlockMode(animated = false) {
   const activeElement = document.activeElement;
 
   let html = "";
+  let globalLine = 1; // ✅ GLOBAL LINE COUNTER FIX
 
   currentParts.forEach((part, index) => {
     if (!part) return;
@@ -1201,11 +1202,23 @@ function renderBlockMode(animated = false) {
     const collapsedClass = isExpanded ? "" : " collapsed-section";
 
     html += `
-      <section class="code-section${collapsedClass}" data-type="${part.type}" data-section-id="${part.type}-${index}" data-index="${index}">
-        <div class="section-label">${displayType}</div>
+      <section class="code-section${collapsedClass}"
+        data-type="${part.type}"
+        data-section-id="${part.type}-${index}"
+        data-index="${index}">
+
+        <div class="section-label" data-index="${index}">
+          ${displayType}
+        </div>
+
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
-            ${renderCodeBlockHTML(part.content, index, !isExpanded)}
+            ${renderCodeBlockHTML(
+              part.content,
+              index,
+              !isExpanded,
+              () => globalLine++   // ✅ GLOBAL LINE HOOK
+            )}
           </div>
         </div>
       </section>
@@ -1233,6 +1246,14 @@ function renderBlockMode(animated = false) {
   enableSectionTapSelect();
   enableFunctionLineTap();
   enableLineNumberToggle();
+
+  // ✅ NEW: SECTION TOGGLE HOOK
+  codeView.querySelectorAll(".section-label").forEach(label => {
+    label.addEventListener("click", () => {
+      const index = Number(label.dataset.index);
+      toggleSection(index);
+    });
+  });
 }
 
 function renderSeparatedBlocks(text) {
