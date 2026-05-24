@@ -9,16 +9,12 @@ document.addEventListener("gestureend", e => e.preventDefault());
 
 let activeType = null;
 let currentParts = [];
-let selectBox = null;
 let statusWasPressed = false;
 let selectedLines = new Set();
 let expandedBlocks = new Set();
 
-let selectBoxRAF = null;
-let latestSelectBoxPoint = null;
-
 if (status) {
-  status.addEventListener("click", (e) => {
+  status.addEventListener("click", e => {
     e.stopPropagation();
     statusWasPressed = true;
     status.classList.remove("status-faded");
@@ -81,7 +77,6 @@ async function handleWholeScreenPaste(e) {
       stack.removeEventListener("click", handleWholeScreenPaste);
       renderBlockMode(true);
     }, 320);
-
   } catch (err) {
     alert("Clipboard paste failed. Try copying the code again first.");
   }
@@ -240,10 +235,7 @@ function insertEmptyBlock(index) {
     content: ""
   });
 
-  expandedBlocks = new Set(
-    [...expandedBlocks].map(i => i >= index ? i + 1 : i)
-  );
-
+  expandedBlocks = new Set([...expandedBlocks].map(i => i >= index ? i + 1 : i));
   expandedBlocks.add(index);
 
   renderBlockMode();
@@ -327,102 +319,133 @@ async function copyFinalBuild() {
         copyBtn.textContent = "COPY ALL";
       }, 900);
     }
-
   } catch (err) {
     alert("Copy failed. Try again.");
   }
 }
+
+function getSelectedLineGroups() {
+  const groups = {};
+
+  selectedLines.forEach(key => {
+    const [block, line] = key.split(":").map(Number);
+    if (!groups[block]) groups[block] = [];
+    groups[block].push(line);
+  });
+
+  Object.keys(groups).forEach(block => {
+    groups[block].sort((a, b) => a - b);
+  });
+
+  return groups;
+}
+
+function replaceSelectedLinesWithText(newText) {
+  closeOtherEditors();
+
+  const groups = getSelectedLineGroups();
+  const blockIndexes = Object.keys(groups).map(Number).sort((a, b) => a - b);
+  if (!blockIndexes.length) return;
+
+  const pasteLines = String(newText).split("\n");
+  const firstBlock = blockIndexes[0];
+
+  blockIndexes.forEach(blockIndex => {
+    const part = currentParts[blockIndex];
+    if (!part) return;
+
+    const lines = part.content.split("\n");
+    const selected = new Set(groups[blockIndex]);
+    const minLine = Math.min(...groups[blockIndex]);
+    const insertAt = Math.max(0, minLine - 1);
+
+    const kept = lines.filter((line, i) => !selected.has(i + 1));
+
+    if (blockIndex === firstBlock && newText !== "") {
+      kept.splice(insertAt, 0, ...pasteLines);
+    }
+
+    part.content = kept.join("\n");
+  });
+
+  selectedLines = new Set();
+  renderBlockMode();
+}
+
+function eraseSelectedLines() {
+  replaceSelectedLinesWithText("");
+}
+
+async function pasteIntoSelectedLines() {
+  if (!selectedLines.size) return;
+
+  try {
+    const text = await navigator.clipboard.readText();
+    replaceSelectedLinesWithText(text);
+  } catch (err) {
+    alert("Paste failed. Copy text first.");
+  }
+}
+
+function buildSelectedLineTools() {
+  const old = document.querySelector(".selected-line-tools");
+  if (old) old.remove();
+
+  const tools = document.createElement("div");
+  tools.className = "selected-line-tools";
+  tools.innerHTML = `
+    <button type="button" class="selected-paste-btn">PASTE</button>
+    <button type="button" class="selected-erase-btn">ERASE</button>
+  `;
+
+  tools.querySelector(".selected-paste-btn").addEventListener("click", e => {
+    e.stopPropagation();
+    pasteIntoSelectedLines();
+  });
+
+  tools.querySelector(".selected-erase-btn").addEventListener("click", e => {
+    e.stopPropagation();
+    eraseSelectedLines();
+  });
+
+  document.body.appendChild(tools);
+  updateSelectedLineTools();
+}
+
+function updateSelectedLineTools() {
+  const tools = document.querySelector(".selected-line-tools");
+  if (!tools) return;
+  tools.classList.toggle("show-selected-tools", selectedLines.size > 0);
+}
+
+document.addEventListener("keydown", e => {
+  if (!selectedLines.size) return;
+  if (e.target.closest("textarea, input, [contenteditable='true']")) return;
+
+  if (e.key === "Backspace" || e.key === "Delete") {
+    e.preventDefault();
+    eraseSelectedLines();
+  }
+});
+
+document.addEventListener("paste", e => {
+  if (!selectedLines.size) return;
+  if (e.target.closest("textarea, input, [contenteditable='true']")) return;
+
+  const text = e.clipboardData.getData("text/plain");
+  if (!text) return;
+
+  e.preventDefault();
+  replaceSelectedLinesWithText(text);
+});
 
 function clearTextSelection() {
   const selection = window.getSelection();
   if (selection) selection.removeAllRanges();
 }
 
-function rangeFromPoint(x, y) {
-  if (document.caretRangeFromPoint) {
-    return document.caretRangeFromPoint(x, y);
-  }
-
-  if (document.caretPositionFromPoint) {
-    const pos = document.caretPositionFromPoint(x, y);
-    if (!pos) return null;
-
-    const range = document.createRange();
-    range.setStart(pos.offsetNode, pos.offset);
-    range.collapse(true);
-    return range;
-  }
-
-  return null;
-}
-
-function getTextOffset(root, node, offset) {
-  let total = 0;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-
-  while (walker.nextNode()) {
-    const textNode = walker.currentNode;
-
-    if (textNode === node) return total + offset;
-
-    total += textNode.textContent.length;
-  }
-
-  return total;
-}
-
 function clampNumber(num, min, max) {
   return Math.max(min, Math.min(max, num));
-}
-
-function makeSelectBox() {
-  removeSelectBox();
-
-  selectBox = document.createElement("div");
-  selectBox.className = "custom-select-box";
-  document.body.appendChild(selectBox);
-}
-
-function updateSelectBox(x1, y1, x2, y2) {
-  if (!selectBox) return;
-
-  selectBox.style.left = Math.min(x1, x2) + "px";
-  selectBox.style.top = Math.min(y1, y2) + "px";
-  selectBox.style.width = Math.abs(x2 - x1) + "px";
-  selectBox.style.height = Math.abs(y2 - y1) + "px";
-}
-
-function scheduleSelectBoxUpdate(x1, y1, x2, y2) {
-  latestSelectBoxPoint = { x1, y1, x2, y2 };
-
-  if (selectBoxRAF) return;
-
-  selectBoxRAF = requestAnimationFrame(() => {
-    if (latestSelectBoxPoint) {
-      updateSelectBox(
-        latestSelectBoxPoint.x1,
-        latestSelectBoxPoint.y1,
-        latestSelectBoxPoint.x2,
-        latestSelectBoxPoint.y2
-      );
-    }
-
-    selectBoxRAF = null;
-  });
-}
-
-function removeSelectBox() {
-  if (selectBoxRAF) {
-    cancelAnimationFrame(selectBoxRAF);
-    selectBoxRAF = null;
-  }
-
-  latestSelectBoxPoint = null;
-
-  if (selectBox) {
-    selectBox.remove();
-    selectBox = null;
-  }
 }
 
 function autoSizeEditor(editor) {
@@ -592,11 +615,11 @@ function buildCopyFinalButton() {
   button.style.cursor = "pointer";
   button.style.touchAction = "manipulation";
 
-  button.addEventListener("pointerdown", (e) => {
+  button.addEventListener("pointerdown", e => {
     e.stopPropagation();
   });
 
-  button.addEventListener("click", (e) => {
+  button.addEventListener("click", e => {
     e.stopPropagation();
     copyFinalBuild();
   });
@@ -618,7 +641,6 @@ function enterUnifiedMode() {
   `;
 
   codeView.appendChild(buildCopyFinalButton());
-
   buildTypeToolbar();
   enableToolbarSwipe();
 }
@@ -631,7 +653,7 @@ function enableToolbarSwipe() {
   let dx = 0;
   let dragging = false;
 
-  bar.addEventListener("pointerdown", (e) => {
+  bar.addEventListener("pointerdown", e => {
     closeOtherEditors();
 
     startX = e.clientX;
@@ -640,7 +662,7 @@ function enableToolbarSwipe() {
     bar.setPointerCapture(e.pointerId);
   });
 
-  bar.addEventListener("pointermove", (e) => {
+  bar.addEventListener("pointermove", e => {
     if (!dragging) return;
     dx = e.clientX - startX;
   });
@@ -650,12 +672,6 @@ function enableToolbarSwipe() {
     dragging = false;
 
     if (Math.abs(dx) > 120) {
-      codeView.querySelectorAll(".code-block").forEach(block => {
-        block.classList.remove("active-type", "dimmed-type", "selected-block", "dragging-block");
-        block.style.transform = "";
-        block.style.opacity = "";
-      });
-
       enterUnifiedMode();
     }
   });
@@ -675,7 +691,7 @@ function enableInsertGapSwipe() {
     let dy = 0;
     let dragging = false;
 
-    gap.addEventListener("pointerdown", (e) => {
+    gap.addEventListener("pointerdown", e => {
       if (document.body.classList.contains("unified-mode")) return;
 
       startX = e.clientX;
@@ -687,7 +703,7 @@ function enableInsertGapSwipe() {
       gap.setPointerCapture(e.pointerId);
     });
 
-    gap.addEventListener("pointermove", (e) => {
+    gap.addEventListener("pointermove", e => {
       if (!dragging) return;
 
       dx = e.clientX - startX;
@@ -793,7 +809,7 @@ function enableFunctionLineTap() {
   const labels = [...codeView.querySelectorAll(".function-line")];
 
   labels.forEach(label => {
-    label.addEventListener("pointerdown", (e) => {
+    label.addEventListener("pointerdown", e => {
       e.stopPropagation();
 
       const block = label.closest(".code-block");
@@ -852,6 +868,8 @@ function enableLineNumberToggle() {
 
     const row = button.closest(".code-line");
     if (row) row.classList.toggle("selected-line", selectedLines.has(key));
+
+    updateSelectedLineTools();
   }
 
   function buttonFromPoint(x, y) {
@@ -861,7 +879,7 @@ function enableLineNumberToggle() {
   }
 
   buttons.forEach(button => {
-    button.addEventListener("pointerdown", (e) => {
+    button.addEventListener("pointerdown", e => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -876,7 +894,7 @@ function enableLineNumberToggle() {
       applyButton(button);
     });
 
-    button.addEventListener("pointermove", (e) => {
+    button.addEventListener("pointermove", e => {
       if (!active || e.pointerId !== pointerId) return;
 
       e.preventDefault();
@@ -885,7 +903,7 @@ function enableLineNumberToggle() {
       applyButton(buttonFromPoint(e.clientX, e.clientY));
     });
 
-    button.addEventListener("pointerup", (e) => {
+    button.addEventListener("pointerup", e => {
       if (e.pointerId !== pointerId) return;
 
       active = false;
@@ -897,7 +915,7 @@ function enableLineNumberToggle() {
       } catch (err) {}
     });
 
-    button.addEventListener("pointercancel", (e) => {
+    button.addEventListener("pointercancel", e => {
       active = false;
       pointerId = null;
       touched = new Set();
@@ -907,7 +925,7 @@ function enableLineNumberToggle() {
       } catch (err) {}
     });
 
-    button.addEventListener("click", (e) => {
+    button.addEventListener("click", e => {
       e.preventDefault();
       e.stopPropagation();
     });
@@ -918,11 +936,12 @@ function enableSectionTapSelect() {
   const sections = [...codeView.querySelectorAll(".code-section")];
 
   sections.forEach(section => {
-    section.addEventListener("click", (e) => {
+    section.addEventListener("click", e => {
       if (document.body.classList.contains("unified-mode")) return;
       if (e.target.closest(".block-editor")) return;
       if (e.target.closest(".function-line")) return;
       if (e.target.closest(".line-number-box")) return;
+      if (e.target.closest(".selected-line-tools")) return;
 
       const index = Number(section.dataset.index);
       const block = section.querySelector(".code-block");
@@ -951,7 +970,6 @@ function enableSectionTapSelect() {
       block.style.opacity = "";
 
       clearTextSelection();
-      removeSelectBox();
     });
   });
 }
@@ -959,14 +977,13 @@ function enableSectionTapSelect() {
 function enableBlockSelectionAndErase() {
   const blocks = [...codeView.querySelectorAll(".code-block")];
 
-  blocks.forEach((block) => {
+  blocks.forEach(block => {
     let startX = 0;
     let startY = 0;
     let dx = 0;
     let dy = 0;
     let dragging = false;
     let moved = false;
-    let boxSelecting = false;
 
     function blockIsActiveForEditing() {
       if (document.body.classList.contains("unified-mode")) return false;
@@ -974,13 +991,12 @@ function enableBlockSelectionAndErase() {
       return getBlockType(block) === activeType;
     }
 
-    block.addEventListener("pointerdown", (e) => {
+    block.addEventListener("pointerdown", e => {
       if (e.target.closest(".line-number-box")) return;
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
 
       const index = Number(block.dataset.index);
-
       if (!expandedBlocks.has(index)) return;
 
       startX = e.clientX;
@@ -988,31 +1004,14 @@ function enableBlockSelectionAndErase() {
       dx = 0;
       dy = 0;
       moved = false;
-
-      const alreadySelected = block.classList.contains("selected-block");
-
-      if (alreadySelected) {
-        e.preventDefault();
-        clearTextSelection();
-
-        boxSelecting = true;
-        dragging = false;
-
-        makeSelectBox();
-        updateSelectBox(startX, startY, startX, startY);
-
-        block.setPointerCapture(e.pointerId);
-        return;
-      }
-
-      boxSelecting = false;
       dragging = true;
 
       block.setPointerCapture(e.pointerId);
       clearTextSelection();
     });
 
-    block.addEventListener("pointermove", (e) => {
+    block.addEventListener("pointermove", e => {
+      if (!dragging) return;
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
 
@@ -1022,69 +1021,20 @@ function enableBlockSelectionAndErase() {
       const distance = Math.hypot(dx, dy);
       if (distance > 2) moved = true;
 
-      if (boxSelecting) {
-        e.preventDefault();
-        scheduleSelectBoxUpdate(startX, startY, e.clientX, e.clientY);
-        return;
-      }
-
-      if (!dragging) return;
-
       if (distance > 18) {
-        moved = true;
         block.classList.add("dragging-block");
         block.style.transform = `translate(${dx}px, ${dy}px)`;
         block.style.opacity = "0.82";
       }
     });
 
-    block.addEventListener("pointerup", (e) => {
-      if (!blockIsActiveForEditing()) return;
-      if (block.classList.contains("editing-block")) return;
+    block.addEventListener("pointerup", e => {
+      if (!dragging) return;
 
-      if (boxSelecting) {
-        e.preventDefault();
-
-        boxSelecting = false;
-        updateSelectBox(startX, startY, e.clientX, e.clientY);
-
-        const codeLines = block.querySelector(".code-lines");
-
-        if (codeLines && selectBox) {
-          const box = selectBox.getBoundingClientRect();
-          const startRange = rangeFromPoint(box.left, box.top);
-          const endRange = rangeFromPoint(box.right, box.bottom);
-
-          if (startRange && endRange) {
-            let start = getTextOffset(codeLines, startRange.startContainer, startRange.startOffset);
-            let end = getTextOffset(codeLines, endRange.startContainer, endRange.startOffset);
-
-            if (start > end) {
-              const temp = start;
-              start = end;
-              end = temp;
-            }
-
-            convertBlockToTextarea(block, start, end);
-          }
-        }
-
-        removeSelectBox();
-
-        try {
-          block.releasePointerCapture(e.pointerId);
-        } catch (err) {}
-
-        return;
-      }
-
-      const wasDragging = dragging;
       dragging = false;
 
-      if (!wasDragging) {
-        removeSelectBox();
-        return;
-      }
+      if (!blockIsActiveForEditing()) return;
+      if (block.classList.contains("editing-block")) return;
 
       if (!moved) {
         closeOtherEditors(block);
@@ -1096,7 +1046,6 @@ function enableBlockSelectionAndErase() {
         });
 
         block.classList.add("selected-block");
-        removeSelectBox();
 
         try {
           block.releasePointerCapture(e.pointerId);
@@ -1132,22 +1081,18 @@ function enableBlockSelectionAndErase() {
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
-      removeSelectBox();
 
       try {
         block.releasePointerCapture(e.pointerId);
       } catch (err) {}
     });
 
-    block.addEventListener("pointercancel", (e) => {
+    block.addEventListener("pointercancel", e => {
       dragging = false;
-      boxSelecting = false;
 
       block.classList.remove("dragging-block");
       block.style.transform = "";
       block.style.opacity = "";
-
-      removeSelectBox();
 
       try {
         block.releasePointerCapture(e.pointerId);
@@ -1177,6 +1122,16 @@ function getDisplayType(type) {
   return type;
 }
 
+function toggleSection(index) {
+  if (expandedBlocks.has(index)) {
+    expandedBlocks.delete(index);
+  } else {
+    expandedBlocks.add(index);
+  }
+
+  renderBlockMode();
+}
+
 function renderBlockMode(animated = false) {
   closeOtherEditors();
 
@@ -1192,7 +1147,6 @@ function renderBlockMode(animated = false) {
   const activeElement = document.activeElement;
 
   let html = "";
-  let globalLine = 1; // ✅ GLOBAL LINE COUNTER FIX
 
   currentParts.forEach((part, index) => {
     if (!part) return;
@@ -1213,20 +1167,13 @@ function renderBlockMode(animated = false) {
 
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
-            ${renderCodeBlockHTML(
-              part.content,
-              index,
-              !isExpanded,
-              () => globalLine++   // ✅ GLOBAL LINE HOOK
-            )}
+            ${renderCodeBlockHTML(part.content, index, !isExpanded)}
           </div>
         </div>
       </section>
     `;
 
-    html += `
-      <div class="insert-gap" data-insert-index="${index + 1}"></div>
-    `;
+    html += `<div class="insert-gap" data-insert-index="${index + 1}"></div>`;
   });
 
   codeView.innerHTML = html;
@@ -1240,6 +1187,7 @@ function renderBlockMode(animated = false) {
   });
 
   buildTypeToolbar();
+  buildSelectedLineTools();
   enableToolbarSwipe();
   enableInsertGapSwipe();
   enableBlockSelectionAndErase();
@@ -1247,9 +1195,9 @@ function renderBlockMode(animated = false) {
   enableFunctionLineTap();
   enableLineNumberToggle();
 
-  // ✅ NEW: SECTION TOGGLE HOOK
   codeView.querySelectorAll(".section-label").forEach(label => {
-    label.addEventListener("click", () => {
+    label.addEventListener("click", e => {
+      e.stopPropagation();
       const index = Number(label.dataset.index);
       toggleSection(index);
     });
@@ -1371,6 +1319,33 @@ function injectCollapsedStyles() {
     .code-section.collapsed-section .section-label::after {
       content: " +";
       opacity: .5;
+    }
+
+    .selected-line-tools {
+      position: fixed;
+      left: 18px;
+      bottom: 76px;
+      z-index: 91;
+      display: none;
+      gap: 8px;
+    }
+
+    .selected-line-tools.show-selected-tools {
+      display: flex;
+    }
+
+    .selected-line-tools button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 14px;
+      background: #111;
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      cursor: pointer;
+      touch-action: manipulation;
     }
   `;
 
