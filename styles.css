@@ -212,25 +212,7 @@ body.unified-mode{
 }
 
 .center-title{
-  position:absolute;
-  left:50%;
-  top:66%;
-  transform:translate(-50%,-50%);
-  text-align:center;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  padding:14px 18px;
-  border-radius:22px;
-  background:linear-gradient(180deg,rgba(108,145,98,.18),rgba(74,108,66,.14));
-  border:1px solid rgba(60,90,52,.14);
-  box-shadow:0 10px 30px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.28);
-  backdrop-filter:blur(3px);
-  -webkit-backdrop-filter:blur(3px);
-  user-select:none;
-  -webkit-user-select:none;
-  z-index:5;
+  display:none !important;
 }
 
 .selected-line-tools{
@@ -244,12 +226,12 @@ body.unified-mode{
   justify-content:center;
   gap:10px;
   padding:14px 18px;
-  border-radius:22px;
-  background:linear-gradient(180deg,rgba(108,145,98,.18),rgba(74,108,66,.14));
-  border:1px solid rgba(60,90,52,.14);
-  box-shadow:0 10px 30px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.28);
-  backdrop-filter:blur(3px);
-  -webkit-backdrop-filter:blur(3px);
+  border-radius:28px;
+  background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(220,230,215,.18));
+  border:1px solid rgba(120,140,120,.16);
+  box-shadow:0 10px 30px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.34);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   user-select:none;
   -webkit-user-select:none;
 }
@@ -258,7 +240,6 @@ body.unified-mode{
   display:flex;
 }
 
-.center-word,
 .selected-line-tools button{
   border:0;
   pointer-events:auto;
@@ -275,29 +256,25 @@ body.unified-mode{
   font-family:inherit;
 }
 
-.center-word:active,
 .selected-line-tools button:active{
   transform:scale(.94);
 }
 
-.word-replace,
 .selected-replace-btn{
   color:#1847d8;
-  background:rgba(24,71,216,.08);
+  background:rgba(24,71,216,.10) !important;
   text-shadow:0 0 10px rgba(24,71,216,.18);
 }
 
-.word-and,
 .selected-and-btn{
   color:#b89200;
-  background:rgba(184,146,0,.08);
+  background:rgba(184,146,0,.10) !important;
   text-shadow:0 0 10px rgba(184,146,0,.14);
 }
 
-.word-erase,
 .selected-erase-btn{
   color:#6a1b2b;
-  background:rgba(106,27,43,.08);
+  background:rgba(106,27,43,.10) !important;
   text-shadow:0 0 10px rgba(106,27,43,.18);
 }
 
