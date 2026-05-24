@@ -1372,15 +1372,19 @@ function renderCodeHTML(text) {
     '$1<span class="function-line" data-select-type="brace">$2</span>'
   );
 
-  html = html.replace(
+html = html.replace(
   /(^|\n)(\s*[^\n{}]+?\{\s*)/g,
   (full, lead, opener) => {
     const clean = opener.trim();
 
-    const isObviousJS =
-      /^(if|for|while|switch|catch|try|else|function|async|class)\b/.test(clean);
+    const isFunctionLine =
+      /^(async\s+)?function\b/.test(clean);
 
-    if (isObviousJS) return full;
+    const isLikelyCSS =
+      /^[.#][^\n{}]+?\{\s*$/.test(clean) ||
+      /^[a-zA-Z][a-zA-Z0-9_-]*[^\n{}]*\{\s*$/.test(clean);
+
+    if (!isFunctionLine && !isLikelyCSS) return full;
 
     return `${lead}<span class="function-line" data-select-type="brace">${opener}</span>`;
   }
