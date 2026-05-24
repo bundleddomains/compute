@@ -198,16 +198,27 @@ function splitCode(text) {
   const headMatch = text.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
 
   if (headMatch) {
-    const headContent = headMatch[1].trim();
+    let headContent = headMatch[1];
+    let extractedFromHead = "";
 
-    if (headContent) {
+    headContent = headContent.replace(
+      /<style\b[^>]*>[\s\S]*?<\/style>|<script\b[^>]*>[\s\S]*?<\/script>|<svg\b[\s\S]*?<\/svg>/gi,
+      match => {
+        extractedFromHead += "\n" + match + "\n";
+        return "";
+      }
+    );
+
+    const cleanHead = headContent.trim();
+
+    if (cleanHead) {
       parts.push({
         type: "head",
-        content: headContent
+        content: cleanHead
       });
     }
 
-    text = text.replace(headMatch[0], "");
+    text = text.replace(headMatch[0], "\n" + extractedFromHead + "\n");
   }
 
   const regex =
