@@ -218,16 +218,19 @@ body.unified-mode{
 .selected-line-tools{
   position:fixed;
   left:50%;
-  bottom:74px;
+  right:auto;
+  bottom:116px;
   transform:translateX(-50%);
-  z-index:91;
+  z-index:120;
   display:none;
+  width:max-content;
+  max-width:calc(100vw - 28px);
   align-items:center;
   justify-content:center;
-  gap:10px;
-  padding:14px 18px;
+  gap:clamp(7px, 2vw, 10px);
+  padding:clamp(10px, 3vw, 14px) clamp(12px, 4vw, 18px);
   border-radius:28px;
-  background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(220,230,215,.18));
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(220,230,215,.22));
   border:1px solid rgba(120,140,120,.16);
   box-shadow:0 10px 30px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.34);
   backdrop-filter:blur(10px);
@@ -244,13 +247,14 @@ body.unified-mode{
   border:0;
   pointer-events:auto;
   cursor:pointer;
-  padding:8px 10px;
+  padding:8px clamp(8px, 2.4vw, 10px);
   border-radius:14px;
   background:transparent;
-  font-size:24px;
+  font-size:clamp(17px, 5vw, 24px);
   font-weight:900;
   line-height:1.05;
   letter-spacing:.06em;
+  white-space:nowrap;
   transition:color .22s ease, background .22s ease, text-shadow .22s ease, transform .18s ease, opacity .22s ease;
   touch-action:manipulation;
   font-family:inherit;
@@ -583,6 +587,7 @@ body.unified-mode .code-block{
   font-weight:900;
   cursor:pointer;
   touch-action:manipulation;
+  transition:transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
 }
 
 .type-tool-head{color:rgba(90,70,120,.95);background:rgba(120,90,170,.10);}
@@ -593,8 +598,38 @@ body.unified-mode .code-block{
 .type-tool-svg{color:rgba(90,60,150,.95);background:rgba(90,60,150,.10);}
 
 .type-tool.active-tool{
-  background:#111;
-  color:white;
+  transform:scale(1.02);
+  box-shadow:0 4px 14px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+.type-tool-head.active-tool{
+  color:#6f56a8;
+  background:rgba(120,90,170,.16);
+}
+
+.type-tool-html.active-tool{
+  color:#9a7400;
+  background:rgba(180,135,20,.16);
+}
+
+.type-tool-css.active-tool{
+  color:#00796b;
+  background:rgba(0,150,135,.16);
+}
+
+.type-tool-js.active-tool{
+  color:#9b6200;
+  background:rgba(190,120,0,.16);
+}
+
+.type-tool-svg.active-tool{
+  color:#6e48b5;
+  background:rgba(90,60,150,.16);
+}
+
+.type-tool-hidden.active-tool{
+  color:#666;
+  background:rgba(0,0,0,.08);
 }
 
 .hidden{
