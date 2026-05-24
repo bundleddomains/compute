@@ -151,23 +151,59 @@ body.unified-mode {
 }
 
 .center-title,
-.selected-line-tools{
-  position:fixed;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  padding:14px 18px;
-  border-radius:22px;
-  background:linear-gradient(180deg, rgba(108,145,98,.18), rgba(74,108,66,.14));
-  border:1px solid rgba(60,90,52,.14);
-  box-shadow:0 10px 30px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.28);
-  backdrop-filter:blur(3px);
-  -webkit-backdrop-filter:blur(3px);
-  user-select:none;
-  -webkit-user-select:none;
+
+.selected-line-tools {
+  position: fixed;
+  left: 50%;
+  bottom: 76px;
+  transform: translateX(-50%);
+  z-index: 91;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(108,145,98,.18), rgba(74,108,66,.14));
+  border: 1px solid rgba(60,90,52,.14);
+  box-shadow: 0 10px 30px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.28);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.selected-line-tools.show-selected-tools {
+  display: flex;
+}
+
+.selected-line-tools button {
+  border: 0;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  background: transparent;
+  touch-action: manipulation;
+}
+
+.selected-replace-btn {
+  color: #1847d8;
+  background: rgba(24,71,216,.08) !important;
+}
+
+.selected-and-btn {
+  color: #b89200;
+  background: rgba(184,146,0,.08) !important;
+}
+
+.selected-erase-btn {
+  color: #6a1b2b;
+  background: rgba(106,27,43,.08) !important;
+}
+
+.selected-and-btn:disabled {
+  opacity: .28;
 }
 
 .center-title{
