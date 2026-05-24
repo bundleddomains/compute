@@ -700,3 +700,15 @@ body.unified-mode .code-block{
   content:" +";
   opacity:.5;
 }
+
+.selected-line-tools{
+  left:50% !important;
+  bottom:150px !important;
+  transform:translateX(-50%) !important;
+  z-index:999 !important;
+  pointer-events:auto !important;
+}
+
+.selected-line-tools button{
+  pointer-events:auto !important;
+}
