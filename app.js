@@ -13,6 +13,33 @@ let statusWasPressed = false;
 let selectedLines = new Set();
 let expandedBlocks = new Set();
 
+let undoStack = [];
+
+function saveUndoState() {
+  undoStack.push({
+    parts: JSON.parse(JSON.stringify(currentParts)),
+    selected: [...selectedLines],
+    expanded: [...expandedBlocks],
+    active: activeType
+  });
+
+  if (undoStack.length > 25) undoStack.shift();
+}
+
+function undoLastChange() {
+  closeOtherEditors();
+
+  const last = undoStack.pop();
+  if (!last) return;
+
+  currentParts = last.parts;
+  selectedLines = new Set(last.selected);
+  expandedBlocks = new Set(last.expanded);
+  activeType = last.active;
+
+  renderBlockMode();
+}
+
 if (status) {
   status.addEventListener("click", e => {
     e.stopPropagation();
@@ -227,6 +254,7 @@ function guessInsertType(index) {
 
 function insertEmptyBlock(index) {
   closeOtherEditors();
+  saveUndoState();
 
   const type = guessInsertType(index);
 
@@ -346,6 +374,7 @@ function replaceSelectedLinesWithText(newText) {
   const groups = getSelectedLineGroups();
   const blockIndexes = Object.keys(groups).map(Number).sort((a, b) => a - b);
   if (!blockIndexes.length) return;
+  saveUndoState();
 
   const pasteLines = String(newText).split("\n");
   const firstBlock = blockIndexes[0];
@@ -386,7 +415,39 @@ async function pasteIntoSelectedLines() {
     alert("Paste failed. Copy text first.");
   }
 }
+async function addBetweenSelectedLines() {
+  if (selectedLines.size !== 2) return;
 
+  const selected = [...selectedLines].map(key => {
+    const [block, line] = key.split(":").map(Number);
+    return { block, line };
+  });
+
+  if (selected[0].block !== selected[1].block) return;
+
+  selected.sort((a, b) => a.line - b.line);
+
+  if (selected[1].line !== selected[0].line + 1) return;
+
+  const part = currentParts[selected[0].block];
+  if (!part) return;
+
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return;
+
+    saveUndoState();
+
+    const lines = part.content.split("\n");
+    lines.splice(selected[0].line, 0, ...String(text).split("\n"));
+
+    part.content = lines.join("\n");
+    selectedLines = new Set();
+    renderBlockMode();
+  } catch (err) {
+    alert("AND failed. Copy text first.");
+  }
+}
 function buildSelectedLineTools() {
   const old = document.querySelector(".selected-line-tools");
   if (old) old.remove();
@@ -394,14 +455,29 @@ function buildSelectedLineTools() {
   const tools = document.createElement("div");
   tools.className = "selected-line-tools";
   tools.innerHTML = `
-    <button type="button" class="selected-paste-btn">PASTE</button>
+    <button type="button" class="selected-replace-btn">REPLACE</button>
+    <button type="button" class="selected-and-btn">AND</button>
     <button type="button" class="selected-erase-btn">ERASE</button>
   `;
 
-  tools.querySelector(".selected-paste-btn").addEventListener("click", e => {
+  tools.querySelector(".selected-replace-btn").addEventListener("click", e => {
     e.stopPropagation();
     pasteIntoSelectedLines();
   });
+
+  tools.querySelector(".selected-and-btn").addEventListener("click", e => {
+    e.stopPropagation();
+    addBetweenSelectedLines();
+  });
+
+  tools.querySelector(".selected-erase-btn").addEventListener("click", e => {
+    e.stopPropagation();
+    eraseSelectedLines();
+  });
+
+  document.body.appendChild(tools);
+  updateSelectedLineTools();
+}
 
   tools.querySelector(".selected-erase-btn").addEventListener("click", e => {
     e.stopPropagation();
