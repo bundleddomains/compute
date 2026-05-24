@@ -12,6 +12,7 @@ let currentParts = [];
 let selectBox = null;
 let statusWasPressed = false;
 let selectedLines = new Set();
+let expandedBlocks = new Set();
 
 let selectBoxRAF = null;
 let latestSelectBoxPoint = null;
@@ -71,6 +72,7 @@ async function handleWholeScreenPaste(e) {
     setTimeout(() => {
       currentParts = splitCode(text);
       selectedLines = new Set();
+      expandedBlocks = new Set();
 
       if (statusWasPressed && status) {
         status.classList.add("status-faded");
@@ -223,10 +225,8 @@ function splitCode(text) {
 
 function guessInsertType(index) {
   if (activeType) return activeType;
-
   const before = currentParts[index - 1];
   if (before) return before.type;
-
   return "html";
 }
 
@@ -239,6 +239,12 @@ function insertEmptyBlock(index) {
     type,
     content: ""
   });
+
+  expandedBlocks = new Set(
+    [...expandedBlocks].map(i => i >= index ? i + 1 : i)
+  );
+
+  expandedBlocks.add(index);
 
   renderBlockMode();
 
@@ -292,18 +298,7 @@ function getUnifiedCleanText() {
   });
 
   if (usableParts.length === 1) {
-    const only = usableParts[0];
-
-    if (
-      only.type === "js" ||
-      only.type === "css" ||
-      only.type === "html" ||
-      only.type === "svg" ||
-      only.type === "head" ||
-      only.type === "hidden"
-    ) {
-      return only.content.trim();
-    }
+    return usableParts[0].content.trim();
   }
 
   return buildFullFile()
@@ -449,7 +444,7 @@ function saveTextareaBlock(block) {
   }
 
   block.classList.remove("editing-block", "selected-block");
-  block.innerHTML = renderCodeBlockHTML(newText, index);
+  block.innerHTML = renderCodeBlockHTML(newText, index, false);
   clearTextSelection();
   enableLineNumberToggle();
   enableFunctionLineTap();
@@ -460,6 +455,9 @@ function convertBlockToTextarea(block, start = 0, end = 0) {
 
   const scrollY = codeView.scrollTop;
   const index = Number(block.dataset.index);
+
+  expandedBlocks.add(index);
+
   const text = currentParts[index] ? currentParts[index].content : block.textContent;
 
   start = clampNumber(start, 0, text.length);
@@ -802,6 +800,8 @@ function enableFunctionLineTap() {
       if (!block) return;
 
       const index = Number(block.dataset.index);
+      expandedBlocks.add(index);
+
       const text = currentParts[index] ? currentParts[index].content : "";
       const functionHeader = label.textContent.trim();
 
@@ -829,26 +829,87 @@ function enableFunctionLineTap() {
 function enableLineNumberToggle() {
   const buttons = [...codeView.querySelectorAll(".line-number-box")];
 
+  let active = false;
+  let mode = "add";
+  let pointerId = null;
+  let touched = new Set();
+
+  function applyButton(button) {
+    if (!button) return;
+
+    const block = button.dataset.block;
+    const line = button.dataset.line;
+    const key = `${block}:${line}`;
+
+    if (touched.has(key)) return;
+    touched.add(key);
+
+    if (mode === "remove") {
+      selectedLines.delete(key);
+    } else {
+      selectedLines.add(key);
+    }
+
+    const row = button.closest(".code-line");
+    if (row) row.classList.toggle("selected-line", selectedLines.has(key));
+  }
+
+  function buttonFromPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    return el.closest(".line-number-box");
+  }
+
   buttons.forEach(button => {
     button.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
       e.stopPropagation();
+
+      const key = `${button.dataset.block}:${button.dataset.line}`;
+
+      active = true;
+      pointerId = e.pointerId;
+      touched = new Set();
+      mode = selectedLines.has(key) ? "remove" : "add";
+
+      button.setPointerCapture(e.pointerId);
+      applyButton(button);
+    });
+
+    button.addEventListener("pointermove", (e) => {
+      if (!active || e.pointerId !== pointerId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      applyButton(buttonFromPoint(e.clientX, e.clientY));
+    });
+
+    button.addEventListener("pointerup", (e) => {
+      if (e.pointerId !== pointerId) return;
+
+      active = false;
+      pointerId = null;
+      touched = new Set();
+
+      try {
+        button.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    });
+
+    button.addEventListener("pointercancel", (e) => {
+      active = false;
+      pointerId = null;
+      touched = new Set();
+
+      try {
+        button.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     });
 
     button.addEventListener("click", (e) => {
+      e.preventDefault();
       e.stopPropagation();
-
-      const block = button.dataset.block;
-      const line = button.dataset.line;
-      const key = `${block}:${line}`;
-
-      if (selectedLines.has(key)) {
-        selectedLines.delete(key);
-      } else {
-        selectedLines.add(key);
-      }
-
-      const row = button.closest(".code-line");
-      if (row) row.classList.toggle("selected-line", selectedLines.has(key));
     });
   });
 }
@@ -863,10 +924,17 @@ function enableSectionTapSelect() {
       if (e.target.closest(".function-line")) return;
       if (e.target.closest(".line-number-box")) return;
 
+      const index = Number(section.dataset.index);
       const block = section.querySelector(".code-block");
       if (!block) return;
-      if (block.classList.contains("editing-block")) return;
 
+      if (!expandedBlocks.has(index)) {
+        expandedBlocks.add(index);
+        renderBlockMode();
+        return;
+      }
+
+      if (block.classList.contains("editing-block")) return;
       if (activeType && getBlockType(block) !== activeType) return;
 
       closeOtherEditors(block);
@@ -910,6 +978,10 @@ function enableBlockSelectionAndErase() {
       if (e.target.closest(".line-number-box")) return;
       if (!blockIsActiveForEditing()) return;
       if (block.classList.contains("editing-block")) return;
+
+      const index = Number(block.dataset.index);
+
+      if (!expandedBlocks.has(index)) return;
 
       startX = e.clientX;
       startY = e.clientY;
@@ -1043,6 +1115,13 @@ function enableBlockSelectionAndErase() {
         setTimeout(() => {
           currentParts[index] = null;
           currentParts = currentParts.filter(Boolean);
+
+          expandedBlocks = new Set(
+            [...expandedBlocks]
+              .filter(i => i !== index)
+              .map(i => i > index ? i - 1 : i)
+          );
+
           cleanSelectedLines();
           renderBlockMode();
         }, 180);
@@ -1118,13 +1197,15 @@ function renderBlockMode(animated = false) {
     if (!part) return;
 
     const displayType = getDisplayType(part.type);
+    const isExpanded = expandedBlocks.has(index);
+    const collapsedClass = isExpanded ? "" : " collapsed-section";
 
     html += `
-      <section class="code-section" data-type="${part.type}" data-section-id="${part.type}-${index}">
+      <section class="code-section${collapsedClass}" data-type="${part.type}" data-section-id="${part.type}-${index}" data-index="${index}">
         <div class="section-label">${displayType}</div>
         <div class="section-body">
           <div class="code-block type-${part.type}" data-index="${index}">
-            ${renderCodeBlockHTML(part.content, index)}
+            ${renderCodeBlockHTML(part.content, index, !isExpanded)}
           </div>
         </div>
       </section>
@@ -1158,11 +1239,25 @@ function renderSeparatedBlocks(text) {
   currentParts = splitCode(text);
   activeType = null;
   selectedLines = new Set();
+  expandedBlocks = new Set();
   renderBlockMode();
 }
 
-function renderCodeBlockHTML(text, blockIndex) {
+function renderCodeBlockHTML(text, blockIndex, collapsed = false) {
   const lines = String(text).split("\n");
+
+  if (collapsed) {
+    const preview =
+      lines.find(line => line.trim()) ||
+      "(empty block)";
+
+    return `
+      <div class="collapsed-preview">
+        <span>${lines.length} lines</span>
+        <pre>${renderCodeHTML(preview.slice(0, 140))}</pre>
+      </div>
+    `;
+  }
 
   const rows = lines.map((line, i) => {
     const lineNumber = i + 1;
@@ -1208,7 +1303,62 @@ function escapeHTML(text) {
     .replaceAll(">", "&gt;");
 }
 
+function injectCollapsedStyles() {
+  if (document.getElementById("collapsed-block-style")) return;
+
+  const style = document.createElement("style");
+  style.id = "collapsed-block-style";
+  style.textContent = `
+    .code-section.collapsed-section .section-body {
+      cursor: pointer;
+      opacity: .84;
+    }
+
+    .code-section.collapsed-section .code-block {
+      min-height: 44px;
+    }
+
+    .collapsed-preview {
+      min-height: 44px;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .collapsed-preview span {
+      flex: 0 0 auto;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      opacity: .52;
+      white-space: nowrap;
+    }
+
+    .collapsed-preview pre {
+      margin: 0;
+      opacity: .74;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .code-section.collapsed-section .section-label::after {
+      content: " +";
+      opacity: .5;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 function startDefaultCanvas() {
+  injectCollapsedStyles();
+
   codeView.classList.add("hidden");
   codeView.classList.remove("fade-in-blocks");
   scene.classList.remove("hidden");
@@ -1216,6 +1366,7 @@ function startDefaultCanvas() {
   activeType = null;
   currentParts = [];
   selectedLines = new Set();
+  expandedBlocks = new Set();
   buildStartUI();
 }
 
