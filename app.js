@@ -757,8 +757,12 @@ function enableToolbarSwipe() {
     if (!dragging) return;
     dragging = false;
 
-    if (Math.abs(dx) > 120) {
+    if (dx > 120) {
       enterUnifiedMode();
+    }
+
+    if (dx < -120) {
+      undoLastChange();
     }
   });
 
@@ -1144,7 +1148,9 @@ function enableBlockSelectionAndErase() {
       const eraseThreshold = 120;
 
       if (distance > eraseThreshold) {
-        const index = Number(block.dataset.index);
+  saveUndoState();
+
+  const index = Number(block.dataset.index);
         block.classList.add("erasing-block");
 
         setTimeout(() => {
