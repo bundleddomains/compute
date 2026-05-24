@@ -1373,21 +1373,8 @@ function renderCodeHTML(text) {
   );
 
 html = html.replace(
-  /(^|\n)(\s*[^\n{}]+?\{\s*)/g,
-  (full, lead, opener) => {
-    const clean = opener.trim();
-
-    const isFunctionLine =
-      /^(async\s+)?function\b/.test(clean);
-
-    const isLikelyCSS =
-      /^[.#][^\n{}]+?\{\s*$/.test(clean) ||
-      /^[a-zA-Z][a-zA-Z0-9_-]*[^\n{}]*\{\s*$/.test(clean);
-
-    if (!isFunctionLine && !isLikelyCSS) return full;
-
-    return `${lead}<span class="function-line" data-select-type="brace">${opener}</span>`;
-  }
+  /(^|\n)(\s*[.#][^\n{}]+?\{\s*)/g,
+  '$1<span class="function-line" data-select-type="brace">$2</span>'
 );
 
   return html;
