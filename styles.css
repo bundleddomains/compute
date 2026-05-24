@@ -150,11 +150,16 @@ body.unified-mode {
   margin-left:70px;
 }
 
-.center-title,
-.selected-line-tools{
-  position:fixed;
+.center-title{
+  position:absolute;
   left:50%;
-  transform:translateX(-50%);
+  top:66%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  font-size:24px;
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:.06em;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -168,17 +173,28 @@ body.unified-mode {
   -webkit-backdrop-filter:blur(3px);
   user-select:none;
   -webkit-user-select:none;
-}
-
-.center-title{
-  top:66%;
   z-index:5;
 }
 
 .selected-line-tools{
+  position:fixed;
+  left:50%;
   bottom:74px;
+  transform:translateX(-50%);
   z-index:91;
   display:none;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:14px 18px;
+  border-radius:22px;
+  background:linear-gradient(180deg, rgba(108,145,98,.18), rgba(74,108,66,.14));
+  border:1px solid rgba(60,90,52,.14);
+  box-shadow:0 10px 30px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.28);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  user-select:none;
+  -webkit-user-select:none;
 }
 
 .selected-line-tools.show-selected-tools{
