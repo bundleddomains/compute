@@ -1373,12 +1373,18 @@ function renderCodeHTML(text) {
   );
 
   html = html.replace(
-    /(^|\n)(\s*(?:[.#][A-Za-z0-9_-]+)+(?:\s*[,{])?)/g,
-    (full, lead, selector) => {
-      if (!selector.includes("{")) return full;
-      return `${lead}<span class="function-line" data-select-type="brace">${selector}</span>`;
-    }
-  );
+  /(^|\n)(\s*[^\n{}]+?\{\s*)/g,
+  (full, lead, opener) => {
+    const clean = opener.trim();
+
+    const isObviousJS =
+      /^(if|for|while|switch|catch|try|else|function|async|class)\b/.test(clean);
+
+    if (isObviousJS) return full;
+
+    return `${lead}<span class="function-line" data-select-type="brace">${opener}</span>`;
+  }
+);
 
   return html;
 }
