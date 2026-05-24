@@ -1364,13 +1364,6 @@ function escapeHTML(text) {
     .replaceAll(">", "&gt;");
 }
 
-.code-block.minimized-block {
-  min-height: 44px;
-  max-height: 62px;
-  overflow: hidden;
-  opacity: .86;
-}
-
 function injectCollapsedStyles() {
   if (document.getElementById("collapsed-block-style")) return;
 
