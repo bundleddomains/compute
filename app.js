@@ -1364,22 +1364,27 @@ function escapeHTML(text) {
     .replaceAll(">", "&gt;");
 }
 
+.code-block.minimized-block {
+  min-height: 44px;
+  max-height: 62px;
+  overflow: hidden;
+  opacity: .86;
+}
+
 function injectCollapsedStyles() {
   if (document.getElementById("collapsed-block-style")) return;
 
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
   style.textContent = `
-    .code-section.collapsed-section .section-body {
-      cursor: pointer;
-      opacity: .84;
-    }
-
-    .code-section.collapsed-section .code-block {
+    .code-block.minimized-block {
       min-height: 44px;
+      max-height: 62px;
+      overflow: hidden;
+      opacity: .86;
     }
 
-    .collapsed-preview {
+    .code-block.minimized-block .collapsed-preview {
       min-height: 44px;
       padding: 10px 12px;
       box-sizing: border-box;
@@ -1408,9 +1413,9 @@ function injectCollapsedStyles() {
       pointer-events: none;
     }
 
-    .code-section.collapsed-section .section-label::after {
+    .code-block.minimized-block::after {
       content: " +";
-      opacity: .5;
+      opacity: .45;
     }
 
     .selected-line-tools {
@@ -1443,6 +1448,7 @@ function injectCollapsedStyles() {
 
   document.head.appendChild(style);
 }
+  opacity: .74;
 
 function startDefaultCanvas() {
   injectCollapsedStyles();
