@@ -1,4 +1,3 @@
-
 const scene = document.getElementById("scene");
 const stack = document.getElementById("stack");
 const codeView = document.getElementById("codeView");
@@ -121,7 +120,6 @@ function cleanHTMLShell(html) {
   return html
     .replace(/<!doctype[^>]*>/gi, "")
     .replace(/<\/?html[^>]*>/gi, "")
-    .replace(/<\/?head[^>]*>/gi, "")
     .replace(/<\/?body[^>]*>/gi, "")
     .trim();
 }
@@ -197,8 +195,23 @@ function splitCode(text) {
 
   const parts = [];
 
+  const headMatch = text.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+
+  if (headMatch) {
+    const headContent = headMatch[1].trim();
+
+    if (headContent) {
+      parts.push({
+        type: "head",
+        content: headContent
+      });
+    }
+
+    text = text.replace(headMatch[0], "");
+  }
+
   const regex =
-    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)|(<meta\b[^>]*>)|(<link\b[^>]*>)|(<title\b[^>]*>[\s\S]*?<\/title>)/gi;
+    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
 
   let lastIndex = 0;
   let match;
@@ -229,11 +242,6 @@ function splitCode(text) {
     } else if (/^<svg/i.test(full)) {
       parts.push({
         type: "svg",
-        content: full.trim()
-      });
-    } else if (/^<meta/i.test(full) || /^<link/i.test(full) || /^<title/i.test(full)) {
-      parts.push({
-        type: "head",
         content: full.trim()
       });
     }
