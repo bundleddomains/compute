@@ -1441,7 +1441,7 @@ function injectCollapsedStyles() {
 
   document.head.appendChild(style);
 }
-  ;
+  
 
 function startDefaultCanvas() {
   injectCollapsedStyles();
