@@ -13,6 +13,7 @@ let currentParts = [];
 let statusWasPressed = false;
 let selectedLines = new Set();
 let expandedBlocks = new Set();
+let collapsedFunctions = new Set();
 
 let undoStack = [];
 
