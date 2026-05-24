@@ -151,15 +151,9 @@ body.unified-mode {
 }
 
 .center-title{
-  position:absolute;
+  position:fixed;
   left:50%;
-  top:66%;
-  transform:translate(-50%,-50%);
-  text-align:center;
-  font-size:24px;
-  font-weight:900;
-  line-height:1.05;
-  letter-spacing:.06em;
+  transform:translateX(-50%);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -173,15 +167,12 @@ body.unified-mode {
   -webkit-backdrop-filter:blur(3px);
   user-select:none;
   -webkit-user-select:none;
-  z-index:5;
 }
 
 .selected-line-tools{
   position:fixed;
   left:50%;
-  bottom:74px;
   transform:translateX(-50%);
-  z-index:91;
   display:none;
   align-items:center;
   justify-content:center;
