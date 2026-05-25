@@ -1262,7 +1262,7 @@ function getBrownIndexLabel(part, index) {
   if (functionMatch) return functionMatch[1] + "()";
   if (cssMatch) return cssMatch[1];
 
-  return `${part.type}-${index + 1}`;
+return `${part.type}-${index + 1}`;
 }
 
 function buildBrownIndexBar() {
