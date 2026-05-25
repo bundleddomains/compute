@@ -1464,7 +1464,10 @@ function renderBlockMode(animated = false) {
     if (!part) return;
 
     const displayType = getDisplayType(part.type);
-    const isExpanded = expandedBlocks.has(index);
+const isExpanded =
+  activeType &&
+  part.type === activeType &&
+  expandedBlocks.has(index);
     const blockMinClass = isExpanded ? "" : " minimized-block";
 
     html += `
