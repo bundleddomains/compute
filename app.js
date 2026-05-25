@@ -1294,94 +1294,70 @@ function buildBrownIndexBar() {
   const wrap = document.createElement("div");
   wrap.className = "brown-index-wrap";
 
-  const toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.className = "function-menu-toggle";
-  toggle.textContent = "FUNCTIONS";
+  const functionToggle = document.createElement("button");
+  functionToggle.type = "button";
+  functionToggle.className = "function-menu-toggle";
+  functionToggle.textContent = "FUNCTIONS";
 
-const menu = document.createElement("div");
-menu.className = "brown-index-menu";
+  const labellessToggle = document.createElement("button");
+  labellessToggle.type = "button";
+  labellessToggle.className = "function-menu-toggle";
+  labellessToggle.textContent = "LABELLESS";
 
-const labellessMenu = document.createElement("div");
-labellessMenu.className = "brown-index-menu";
+  const functionMenu = document.createElement("div");
+  functionMenu.className = "brown-index-menu function-list";
 
-const labellessToggle = document.createElement("button");
-labellessToggle.type = "button";
-labellessToggle.className = "function-menu-toggle";
-labellessToggle.textContent = "LABELLESS";
+  const labellessMenu = document.createElement("div");
+  labellessMenu.className = "brown-index-menu labelless-list";
 
-labellessToggle.addEventListener("click", e => {
-  e.stopPropagation();
-  wrap.classList.toggle("open-labelless-menu");
-});
-
-wrap.appendChild(labellessToggle);
-wrap.appendChild(labellessMenu);
-
-  const items = [];
+  const functionItems = [];
 
   currentParts.forEach((part, index) => {
     if (!part || !part.content) return;
-    
-const content = String(part.content).trim();
 
-const hasNamedFunction =
-  /function\s+([A-Za-z0-9_$]+)\s*\(/.test(content);
-
-const hasAnyCode =
-  content.length > 0;
-
-if (
-  part.type === "js" &&
-  hasAnyCode &&
-  !hasNamedFunction
-) {
-  const chip = document.createElement("button");
-
-  chip.type = "button";
-  chip.className = "brown-index-chip";
-  chip.textContent = `js-${index + 1}`;
-
-  chip.addEventListener("click", async e => {
-    e.stopPropagation();
-
-    try {
-      const newText = await navigator.clipboard.readText();
-      if (!newText || !newText.trim()) return;
-
-      saveUndoState();
-
-      currentParts[index].content = newText.trim();
-
-      expandedBlocks.add(index);
-
-      renderBlockMode();
-
-    } catch (err) {
-      alert("Labelless replace failed.");
-    }
-  });
-
-  labellessMenu.appendChild(chip);
-}
-    const content = String(part.content);
+    const content = String(part.content).trim();
     const functionMatches = [...content.matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
 
     if (part.type === "js" && functionMatches.length) {
       functionMatches.forEach(match => {
-        items.push({
+        functionItems.push({
           index,
           label: match[1] + "()",
-          startText: match[0],
-          kind: "function"
+          startText: match[0]
         });
       });
     }
+
+    if (part.type === "js" && !functionMatches.length && content.length) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "brown-index-chip";
+      chip.textContent = `js-${index + 1}`;
+
+      chip.addEventListener("click", async e => {
+        e.stopPropagation();
+
+        try {
+          const newText = await navigator.clipboard.readText();
+          if (!newText || !newText.trim()) return;
+
+          saveUndoState();
+          currentParts[index].content = newText.trim();
+          expandedBlocks.add(index);
+          renderBlockMode();
+
+        } catch (err) {
+          alert("Labelless replace failed.");
+        }
+      });
+
+      labellessMenu.appendChild(chip);
+    }
   });
 
-  items.sort((a, b) => a.label.localeCompare(b.label));
+  functionItems.sort((a, b) => a.label.localeCompare(b.label));
 
-  items.forEach(item => {
+  functionItems.forEach(item => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "brown-index-chip";
@@ -1397,8 +1373,6 @@ if (
         const part = currentParts[item.index];
         if (!part) return;
 
-        saveUndoState();
-
         const text = part.content;
         const start = text.indexOf(item.startText);
         if (start === -1) return;
@@ -1409,6 +1383,8 @@ if (
           return;
         }
 
+        saveUndoState();
+
         part.content =
           text.slice(0, start) +
           newText.trim() +
@@ -1416,26 +1392,32 @@ if (
 
         selectedLines = new Set();
         expandedBlocks.add(item.index);
-
-        wrap.classList.remove("open-function-menu");
-
         renderBlockMode();
 
       } catch (err) {
-        alert("Function paste update failed. Copy code first.");
+        alert("Function paste update failed.");
       }
     });
 
-    menu.appendChild(chip);
+    functionMenu.appendChild(chip);
   });
 
-  toggle.addEventListener("click", e => {
+  functionToggle.addEventListener("click", e => {
     e.stopPropagation();
     wrap.classList.toggle("open-function-menu");
+    wrap.classList.remove("open-labelless-menu");
   });
 
-  wrap.appendChild(toggle);
-  wrap.appendChild(menu);
+  labellessToggle.addEventListener("click", e => {
+    e.stopPropagation();
+    wrap.classList.toggle("open-labelless-menu");
+    wrap.classList.remove("open-function-menu");
+  });
+
+  wrap.appendChild(functionToggle);
+  wrap.appendChild(labellessToggle);
+  wrap.appendChild(functionMenu);
+  wrap.appendChild(labellessMenu);
 
   codeView.prepend(wrap);
 }
