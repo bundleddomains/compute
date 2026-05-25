@@ -1266,13 +1266,21 @@ return `${part.type}-${index + 1}`;
 }
 
 function buildBrownIndexBar() {
-  const old = codeView.querySelector(".brown-index-bar");
+  const old = codeView.querySelector(".brown-index-wrap");
   if (old) old.remove();
 
   if (!currentParts.length) return;
 
-  const bar = document.createElement("div");
-  bar.className = "brown-index-bar";
+  const wrap = document.createElement("div");
+  wrap.className = "brown-index-wrap";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "function-menu-toggle";
+  toggle.textContent = "FUNCTIONS";
+
+  const menu = document.createElement("div");
+  menu.className = "brown-index-menu";
 
   const items = [];
 
@@ -1290,12 +1298,6 @@ function buildBrownIndexBar() {
           startText: match[0],
           kind: "function"
         });
-      });
-    } else {
-      items.push({
-        index,
-        label: getBrownIndexLabel(part, index),
-        kind: "block"
       });
     }
   });
@@ -1320,35 +1322,45 @@ function buildBrownIndexBar() {
 
         saveUndoState();
 
-        if (item.kind === "function") {
-          const text = part.content;
-          const start = text.indexOf(item.startText);
-          if (start === -1) return;
+        const text = part.content;
+        const start = text.indexOf(item.startText);
+        if (start === -1) return;
 
-          const end = findMatchingFunctionEnd(text, start);
-          if (end === null) return;
-
-          part.content =
-            text.slice(0, start) +
-            newText.trim() +
-            text.slice(end);
-        } else {
-          part.content = newText.trim();
+        const end = findMatchingFunctionEnd(text, start);
+        if (end === null) {
+          alert("Could not find function ending. Check for missing }");
+          return;
         }
+
+        part.content =
+          text.slice(0, start) +
+          newText.trim() +
+          text.slice(end);
 
         selectedLines = new Set();
         expandedBlocks.add(item.index);
+
+        wrap.classList.remove("open-function-menu");
+
         renderBlockMode();
 
       } catch (err) {
-        alert("Brown replace failed. Copy code first.");
+        alert("Function paste update failed. Copy code first.");
       }
     });
 
-    bar.appendChild(chip);
+    menu.appendChild(chip);
   });
 
-  codeView.prepend(bar);
+  toggle.addEventListener("click", e => {
+    e.stopPropagation();
+    wrap.classList.toggle("open-function-menu");
+  });
+
+  wrap.appendChild(toggle);
+  wrap.appendChild(menu);
+
+  codeView.prepend(wrap);
 }
 
      
