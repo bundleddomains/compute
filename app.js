@@ -1473,8 +1473,7 @@ function renderBlockMode(animated = false) {
         data-section-id="${part.type}-${index}"
         data-index="${index}">
 
-        <div class="section-label" data-index="${index}">
-          ${displayType}
+
         </div>
 
         <div class="section-body">
