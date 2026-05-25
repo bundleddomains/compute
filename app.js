@@ -1299,14 +1299,71 @@ function buildBrownIndexBar() {
   toggle.className = "function-menu-toggle";
   toggle.textContent = "FUNCTIONS";
 
-  const menu = document.createElement("div");
-  menu.className = "brown-index-menu";
+const menu = document.createElement("div");
+menu.className = "brown-index-menu";
+
+const labellessMenu = document.createElement("div");
+labellessMenu.className = "brown-index-menu";
+
+const labellessToggle = document.createElement("button");
+labellessToggle.type = "button";
+labellessToggle.className = "function-menu-toggle";
+labellessToggle.textContent = "LABELLESS";
+
+labellessToggle.addEventListener("click", e => {
+  e.stopPropagation();
+  wrap.classList.toggle("open-labelless-menu");
+});
+
+wrap.appendChild(labellessToggle);
+wrap.appendChild(labellessMenu);
 
   const items = [];
 
   currentParts.forEach((part, index) => {
     if (!part || !part.content) return;
+    
+const content = String(part.content).trim();
 
+const hasNamedFunction =
+  /function\s+([A-Za-z0-9_$]+)\s*\(/.test(content);
+
+const hasAnyCode =
+  content.length > 0;
+
+if (
+  part.type === "js" &&
+  hasAnyCode &&
+  !hasNamedFunction
+) {
+  const chip = document.createElement("button");
+
+  chip.type = "button";
+  chip.className = "brown-index-chip";
+  chip.textContent = `js-${index + 1}`;
+
+  chip.addEventListener("click", async e => {
+    e.stopPropagation();
+
+    try {
+      const newText = await navigator.clipboard.readText();
+      if (!newText || !newText.trim()) return;
+
+      saveUndoState();
+
+      currentParts[index].content = newText.trim();
+
+      expandedBlocks.add(index);
+
+      renderBlockMode();
+
+    } catch (err) {
+      alert("Labelless replace failed.");
+    }
+  });
+
+  labellessMenu.appendChild(chip);
+}
     const content = String(part.content);
     const functionMatches = [...content.matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
 
