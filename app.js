@@ -669,7 +669,7 @@ function setActiveType(type) {
 
   if (document.body.classList.contains("unified-mode")) {
     document.body.classList.remove("unified-mode");
-    activeType = null;
+    activeType = type;
     renderBlockMode();
   }
 
