@@ -1509,6 +1509,39 @@ function injectCollapsedStyles() {
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
 style.textContent = `
+.brown-index-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+  padding: 10px;
+  background: #150d08;
+  border-bottom: 1px solid #6b3f22;
+}
+
+.function-menu-toggle {
+  border: 1px solid #7b4a2a;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: #3a2416;
+  color: #ffd6aa;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+
+.brown-index-menu {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-top: 10px;
+}
+
+.brown-index-wrap.open-function-menu .brown-index-menu {
+  display: flex;
+}
   .brown-index-bar {
   position: sticky;
   top: 0;
