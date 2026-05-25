@@ -1280,7 +1280,6 @@ function buildBrownIndexBar() {
     if (!part || !part.content) return;
 
     const content = String(part.content);
-
     const functionMatches = [...content.matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
 
     if (part.type === "js" && functionMatches.length) {
@@ -1288,14 +1287,15 @@ function buildBrownIndexBar() {
         items.push({
           index,
           label: match[1] + "()",
-          search: match[0]
+          startText: match[0],
+          kind: "function"
         });
       });
     } else {
       items.push({
         index,
         label: getBrownIndexLabel(part, index),
-        search: null
+        kind: "block"
       });
     }
   });
@@ -1308,27 +1308,41 @@ function buildBrownIndexBar() {
     chip.className = "brown-index-chip";
     chip.textContent = item.label;
 
-    chip.addEventListener("click", e => {
+    chip.addEventListener("click", async e => {
       e.stopPropagation();
 
-      expandedBlocks.add(item.index);
-      renderBlockMode();
+      try {
+        const newText = await navigator.clipboard.readText();
+        if (!newText || !newText.trim()) return;
 
-      requestAnimationFrame(() => {
-        const section = codeView.querySelector(`.code-section[data-index="${item.index}"]`);
-        if (!section) return;
+        const part = currentParts[item.index];
+        if (!part) return;
 
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
+        saveUndoState();
 
-        section.classList.add("brown-index-flash");
+        if (item.kind === "function") {
+          const text = part.content;
+          const start = text.indexOf(item.startText);
+          if (start === -1) return;
 
-        setTimeout(() => {
-          section.classList.remove("brown-index-flash");
-        }, 900);
-      });
+          const end = findMatchingFunctionEnd(text, start);
+          if (end === null) return;
+
+          part.content =
+            text.slice(0, start) +
+            newText.trim() +
+            text.slice(end);
+        } else {
+          part.content = newText.trim();
+        }
+
+        selectedLines = new Set();
+        expandedBlocks.add(item.index);
+        renderBlockMode();
+
+      } catch (err) {
+        alert("Brown replace failed. Copy code first.");
+      }
     });
 
     bar.appendChild(chip);
@@ -1336,6 +1350,8 @@ function buildBrownIndexBar() {
 
   codeView.prepend(bar);
 }
+
+     
 
 function renderBlockMode(animated = false) {
   closeOtherEditors();
