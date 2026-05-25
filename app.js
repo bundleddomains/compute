@@ -1574,6 +1574,13 @@ function injectCollapsedStyles() {
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
 style.textContent = `
+.brown-index-wrap {
+  pointer-events: none;
+}
+
+.brown-index-wrap * {
+  pointer-events: auto;
+}
 .section-label {
   min-width: 58px;
   min-height: 44px;
