@@ -1466,11 +1466,10 @@ function renderBlockMode(animated = false) {
   currentParts.forEach((part, index) => {
     if (!part) return;
 
-    const displayType = getDisplayType(part.type);
-const isExpanded =
-  activeType &&
-  part.type === activeType &&
-  expandedBlocks.has(index);
+    // hide all blocks until bottom button chooses a type
+    if (!activeType || part.type !== activeType) return;
+
+    const isExpanded = expandedBlocks.has(index);
     const blockMinClass = isExpanded ? "" : " minimized-block";
 
     html += `
@@ -1479,14 +1478,11 @@ const isExpanded =
         data-section-id="${part.type}-${index}"
         data-index="${index}">
 
-
-        </div>
-
         <div class="section-body">
           <div class="code-block type-${part.type}${blockMinClass}" data-index="${index}">
             ${renderCodeBlockHTML(part.content, index, !isExpanded)}
           </div>
-        </div>
+
       </section>
     `;
 
@@ -1496,13 +1492,9 @@ const isExpanded =
   codeView.innerHTML = html;
   buildBrownIndexBar();
 
-
   requestAnimationFrame(() => {
     codeView.scrollTop = scrollY;
-
-    if (activeElement && activeElement.blur) {
-      activeElement.blur();
-    }
+    if (activeElement && activeElement.blur) activeElement.blur();
   });
 
   buildTypeToolbar();
