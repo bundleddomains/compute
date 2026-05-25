@@ -1274,25 +1274,39 @@ function buildBrownIndexBar() {
   const bar = document.createElement("div");
   bar.className = "brown-index-bar";
 
-  const items = currentParts
-    .map((part, index) => {
-      if (!part || !part.content) return null;
+  const items = [];
 
-      return {
+  currentParts.forEach((part, index) => {
+    if (!part || !part.content) return;
+
+    const content = String(part.content);
+
+    const functionMatches = [...content.matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
+
+    if (part.type === "js" && functionMatches.length) {
+      functionMatches.forEach(match => {
+        items.push({
+          index,
+          label: match[1] + "()",
+          search: match[0]
+        });
+      });
+    } else {
+      items.push({
         index,
         label: getBrownIndexLabel(part, index),
-        type: part.type
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.label.localeCompare(b.label));
+        search: null
+      });
+    }
+  });
+
+  items.sort((a, b) => a.label.localeCompare(b.label));
 
   items.forEach(item => {
     const chip = document.createElement("button");
     chip.type = "button";
-    chip.className = `brown-index-chip brown-chip-${item.type}`;
+    chip.className = "brown-index-chip";
     chip.textContent = item.label;
-    chip.dataset.index = item.index;
 
     chip.addEventListener("click", e => {
       e.stopPropagation();
