@@ -1586,6 +1586,9 @@ function injectCollapsedStyles() {
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
 style.textContent = `
+.brown-index-wrap.open-labelless-menu .brown-index-menu {
+  display: flex;
+}
 .brown-index-wrap {
   position: sticky;
   top: 0;
