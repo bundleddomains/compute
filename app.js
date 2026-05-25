@@ -711,26 +711,29 @@ function buildTypeToolbar() {
     button.dataset.type = type;
     button.textContent = type === "hidden" ? "SRC" : type.toUpperCase();
 
-    button.addEventListener("click", e => {
-      e.stopPropagation();
+button.addEventListener("click", e => {
+  e.stopPropagation();
 
-      const indexes = currentParts
-        .map((part, index) => part && part.type === type ? index : null)
-        .filter(index => index !== null);
+  const indexes = currentParts
+    .map((part, index) => part && part.type === type ? index : null)
+    .filter(index => index !== null);
 
-      if (!indexes.length) return;
+  if (!indexes.length) return;
 
-      const allOpen = indexes.every(index => expandedBlocks.has(index));
+  const allOpen = indexes.every(index => expandedBlocks.has(index));
 
-      if (allOpen) {
-        indexes.forEach(index => expandedBlocks.delete(index));
-      } else {
-        indexes.forEach(index => expandedBlocks.add(index));
-      }
+  if (allOpen) {
+    indexes.forEach(index => expandedBlocks.delete(index));
+    activeType = null;
+  } else {
+    expandedBlocks.clear();
 
-      activeType = type;
-      renderBlockMode();
-    });
+    indexes.forEach(index => expandedBlocks.add(index));
+    activeType = type;
+  }
+
+  renderBlockMode();
+});
 
     bar.appendChild(button);
   });
