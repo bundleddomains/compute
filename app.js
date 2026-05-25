@@ -365,7 +365,27 @@ async function copyFinalBuild() {
     if (copyBtn) {
       copyBtn.textContent = "COPIED";
       setTimeout(() => {
-        copyBtn.textContent = "COPY ALL";
+const phrases = [
+  "i got u",
+  "come back soon",
+  "made with luhv",
+  "DDD",
+  "< : 3"
+];
+
+let phraseIndex = 0;
+
+button.textContent = phrases[phraseIndex];
+
+button.addEventListener("click", () => {
+  phraseIndex++;
+
+  if (phraseIndex >= phrases.length) {
+    phraseIndex = 0;
+  }
+
+  button.textContent = phrases[phraseIndex];
+});
       }, 900);
     }
   } catch (err) {
