@@ -1466,7 +1466,7 @@ function injectCollapsedStyles() {
 
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
-  style.textContent = '
+style.textContent = `
   .brown-index-bar {
   position: sticky;
   top: 0;
