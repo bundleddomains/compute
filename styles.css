@@ -580,14 +580,10 @@ body.unified-mode .code-block{
 }
 
 .type-tool{
-  border:0;
-  border-radius:999px;
-  padding:7px 9px;
-  font-size:9px;
-  font-weight:900;
-  cursor:pointer;
-  touch-action:manipulation;
-  transition:transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+  min-width: 220px;
+  min-height: 150px;
+  padding: 0 40px;
+  font-size: 52px;
 }
 
 .type-tool-head{color:rgba(90,70,120,.95);background:rgba(120,90,170,.10);}
