@@ -1078,16 +1078,20 @@ function enableSectionTapSelect() {
       const block = section.querySelector(".code-block");
       if (!block) return;
 
-      if (!expandedBlocks.has(index)) {
-  expandedBlocks.add(index);
-  renderBlockMode();
-  return;
-}
+      // TAP THE JS / CSS / HTML LABEL:
+      // closed -> open
+      // open -> closed
+      if (e.target.closest(".section-label")) {
+        toggleSection(index);
+        return;
+      }
 
-if (e.target.closest(".section-label")) {
-  toggleSection(index);
-  return;
-}
+      // tap collapsed card body = open it
+      if (!expandedBlocks.has(index)) {
+        expandedBlocks.add(index);
+        renderBlockMode();
+        return;
+      }
 
       if (block.classList.contains("editing-block")) return;
       if (activeType && getBlockType(block) !== activeType) return;
