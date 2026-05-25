@@ -1098,10 +1098,7 @@ function enableSectionTapSelect() {
       // TAP THE JS / CSS / HTML LABEL:
       // closed -> open
       // open -> closed
-      if (e.target.closest(".section-label")) {
-        toggleSection(index);
-        return;
-      }
+if (e.target.closest(".section-label")) return;
 
       // tap collapsed card body = open it
       if (!expandedBlocks.has(index)) {
@@ -1492,15 +1489,6 @@ function renderBlockMode(animated = false) {
   codeView.innerHTML = html;
   buildBrownIndexBar();
 
-  codeView.querySelectorAll(".section-label").forEach(label => {
-    label.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const index = Number(label.dataset.index);
-      toggleSection(index);
-    });
-  });
 
   requestAnimationFrame(() => {
     codeView.scrollTop = scrollY;
