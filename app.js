@@ -1475,6 +1475,16 @@ function renderBlockMode(animated = false) {
   codeView.innerHTML = html;
   buildBrownIndexBar();
 
+  codeView.querySelectorAll(".section-label").forEach(label => {
+    label.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const index = Number(label.dataset.index);
+      toggleSection(index);
+    });
+  });
+
   requestAnimationFrame(() => {
     codeView.scrollTop = scrollY;
 
@@ -1491,14 +1501,6 @@ function renderBlockMode(animated = false) {
   enableSectionTapSelect();
   enableFunctionLineTap();
   enableLineNumberToggle();
-
-  codeView.querySelectorAll(".section-label").forEach(label => {
-    label.addEventListener("click", e => {
-      e.stopPropagation();
-      const index = Number(label.dataset.index);
-      toggleSection(index);
-    });
-  });
 }
 
 function renderSeparatedBlocks(text) {
@@ -1572,6 +1574,20 @@ function injectCollapsedStyles() {
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
 style.textContent = `
+.section-label {
+  min-width: 58px;
+  min-height: 44px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  position: relative;
+  z-index: 20;
+  cursor: pointer;
+}
 .brown-index-wrap.open-labelless-menu .brown-index-menu {
   display: flex;
 }
