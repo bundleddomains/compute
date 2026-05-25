@@ -1249,6 +1249,79 @@ function toggleSection(index) {
 
   renderBlockMode();
 }
+function getBrownIndexLabel(part, index) {
+  const content = String(part.content || "").trim();
+
+  const classMatch = content.match(/class=["']([^"']+)["']/i);
+  const idMatch = content.match(/id=["']([^"']+)["']/i);
+  const functionMatch = content.match(/function\s+([A-Za-z0-9_$]+)/);
+  const cssMatch = content.match(/([.#][A-Za-z0-9_-]+)\s*\{/);
+
+  if (idMatch) return "#" + idMatch[1];
+  if (classMatch) return "." + classMatch[1].split(/\s+/)[0];
+  if (functionMatch) return functionMatch[1] + "()";
+  if (cssMatch) return cssMatch[1];
+
+  return `${part.type}-${index + 1}`;
+}
+
+function buildBrownIndexBar() {
+  const old = codeView.querySelector(".brown-index-bar");
+  if (old) old.remove();
+
+  if (!currentParts.length) return;
+
+  const bar = document.createElement("div");
+  bar.className = "brown-index-bar";
+
+  const items = currentParts
+    .map((part, index) => {
+      if (!part || !part.content) return null;
+
+      return {
+        index,
+        label: getBrownIndexLabel(part, index),
+        type: part.type
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  items.forEach(item => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `brown-index-chip brown-chip-${item.type}`;
+    chip.textContent = item.label;
+    chip.dataset.index = item.index;
+
+    chip.addEventListener("click", e => {
+      e.stopPropagation();
+
+      expandedBlocks.add(item.index);
+      renderBlockMode();
+
+      requestAnimationFrame(() => {
+        const section = codeView.querySelector(`.code-section[data-index="${item.index}"]`);
+        if (!section) return;
+
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+
+        section.classList.add("brown-index-flash");
+
+        setTimeout(() => {
+          section.classList.remove("brown-index-flash");
+        }, 900);
+      });
+    });
+
+    bar.appendChild(chip);
+  });
+
+  codeView.prepend(bar);
+}
 
 function renderBlockMode(animated = false) {
   closeOtherEditors();
@@ -1295,6 +1368,7 @@ function renderBlockMode(animated = false) {
   });
 
   codeView.innerHTML = html;
+  buildBrownIndexBar();
 
   requestAnimationFrame(() => {
     codeView.scrollTop = scrollY;
@@ -1392,7 +1466,41 @@ function injectCollapsedStyles() {
 
   const style = document.createElement("style");
   style.id = "collapsed-block-style";
-  style.textContent = `
+  style.textContent = '
+  .brown-index-bar {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px;
+  background: #150d08;
+  border-bottom: 1px solid #6b3f22;
+}
+
+.brown-index-chip {
+  flex: none;
+  border: 1px solid #7b4a2a;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #3a2416;
+  color: #ffd6aa;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.brown-index-chip:active {
+  transform: scale(.96);
+}
+
+.brown-index-flash {
+  outline: 2px solid #ffb56b;
+  box-shadow: 0 0 24px #ff9b3d88;
+}
     .code-block.minimized-block {
       min-height: 44px;
       max-height: 62px;
