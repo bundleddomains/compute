@@ -797,14 +797,16 @@ function enableToolbarSwipe() {
   let dx = 0;
   let dragging = false;
 
-  bar.addEventListener("pointerdown", e => {
-    closeOtherEditors();
+bar.addEventListener("pointerdown", e => {
+  if (e.target.closest(".type-tool")) return;
 
-    startX = e.clientX;
-    dx = 0;
-    dragging = true;
-    bar.setPointerCapture(e.pointerId);
-  });
+  closeOtherEditors();
+
+  startX = e.clientX;
+  dx = 0;
+  dragging = true;
+  bar.setPointerCapture(e.pointerId);
+});
 
   bar.addEventListener("pointermove", e => {
     if (!dragging) return;
