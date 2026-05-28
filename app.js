@@ -801,7 +801,7 @@ function enableToolbarSwipe() {
   let dragging = false;
 
 bar.addEventListener("pointerdown", e => {
-  if (e.target.closest(".type-tool")) return;
+
 
   closeOtherEditors();
 
@@ -820,11 +820,11 @@ bar.addEventListener("pointerdown", e => {
     if (!dragging) return;
     dragging = false;
 
-    if (dx > 120) {
+    if (dx > 70) {
       enterUnifiedMode();
     }
 
-    if (dx < -120) {
+    if (dx < -70) {
       undoLastChange();
     }
   });
