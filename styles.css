@@ -579,7 +579,7 @@ body.unified-mode .code-block{
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
-  width:calc(100vw - 20px);
+width:calc(100vw - 34px);
   max-width:420px;
   overflow:hidden;
 }
@@ -588,11 +588,11 @@ body.unified-mode .code-block{
   border:0;
   border-radius:999px;
   min-width:0;
-  width:calc((100vw - 70px) / 6);
-  max-width:58px;
-  min-height:42px;
+width:calc((100vw - 96px) / 6);
+max-width:54px;
+min-height:40px;
+font-size:14px;
   padding:0;
-  font-size:15px;
   font-weight:900;
   cursor:pointer;
   touch-action:manipulation;
