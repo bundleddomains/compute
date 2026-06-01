@@ -185,726 +185,31 @@ function isStandaloneCSS(text) {
   const startsLikeHTML =
     /^<!doctype|^<html|^<head|^<body|^<div|^<style|^<script|^<svg/i.test(trimmed);
 
-  const hasCSSBlock =
-    /[.#a-zA-Z0-9_*:\-\s,[\]="'>]+?\s*\{[\s\S]*?\}/.test(trimmed);
-
-  const hasCSSProps =
-    /[a-z-]+\s*:\s*[^;]+;/.test(trimmed);
-
   const hasJSStructure =
     /\bfunction\s+[A-Za-z0-9_$]+\s*\(/.test(trimmed) ||
     /\bdocument\.getElementById\b/.test(trimmed) ||
-    /\bconst\s+[A-Za-z0-9_$]+\s*=/.test(trimmed);
-
-  return hasCSSBlock && hasCSSProps && !startsLikeHTML && !hasJSStructure;
-}
-
-function splitCode(text) {
-  text = removePasteJunk(text);
-
-  if (isStandaloneJS(text)) {
-    return [{ type: "js", content: text.trim() }];
-  }
-
-  if (isStandaloneCSS(text)) {
-    return [{ type: "css", content: text.trim() }];
-  }
-
-  const parts = [];
-
-  const headMatch = text.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
-
-  if (headMatch) {
-    let headContent = headMatch[1];
-    let extractedFromHead = "";
-
-    headContent = headContent.replace(
-      /<style\b[^>]*>[\s\S]*?<\/style>|<script\b[^>]*>[\s\S]*?<\/script>|<svg\b[\s\S]*?<\/svg>/gi,
-      match => {
-        extractedFromHead += "\n" + match + "\n";
-        return "";
-      }
-    );
-
-    const cleanHead = headContent.trim();
-
-    if (cleanHead) {
-      parts.push({
-        type: "head",
-        content: cleanHead
-      });
-    }
-
-    text = text.replace(headMatch[0], "\n" + extractedFromHead + "\n");
-  }
-
-  const regex =
-    /(<style\b[^>]*>[\s\S]*?<\/style>)|(<script\b[^>]*>[\s\S]*?<\/script>)|(<svg\b[\s\S]*?<\/svg>)/gi;
-
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    const before = text.slice(lastIndex, match.index).trim();
-    if (before) pushCleanHTML(parts, before);
-
-    const full = match[0];
-
-    if (/^<style/i.test(full)) {
-      parts.push({
-        type: "css",
-        content: full.replace(/<style\b[^>]*>/i, "").replace(/<\/style>/i, "").trim()
-      });
-    } else if (/^<script/i.test(full)) {
-      if (/\bsrc\s*=/.test(full)) {
-        parts.push({
-          type: "hidden",
-          content: full.trim()
-        });
-      } else {
-        parts.push({
-          type: "js",
-          content: full.replace(/<script\b[^>]*>/i, "").replace(/<\/script>/i, "").trim()
-        });
-      }
-    } else if (/^<svg/i.test(full)) {
-      parts.push({
-        type: "svg",
-        content: full.trim()
-      });
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  const after = text.slice(lastIndex).trim();
-  if (after) pushCleanHTML(parts, after);
-
-  return parts;
-}
-
-function guessInsertType(index) {
-  if (activeType) return activeType;
-  const before = currentParts[index - 1];
-  if (before) return before.type;
-  return "html";
-}
-
-function insertEmptyBlock(index) {
-  closeOtherEditors();
-  saveUndoState();
-
-  const type = guessInsertType(index);
-
-  currentParts.splice(index, 0, {
-    type,
-    content: ""
-  });
-
-  expandedBlocks = new Set([...expandedBlocks].map(i => i >= index ? i + 1 : i));
-  expandedBlocks.add(index);
-
-  renderBlockMode();
-
-  requestAnimationFrame(() => {
-    const block = codeView.querySelector(`.code-block[data-index="${index}"]`);
-    if (block) convertBlockToTextarea(block, 0, 0);
-  });
-}
-
-function buildFullFile() {
-  closeOtherEditors();
-
-  const headParts = [];
-  const bodyParts = [];
-
-  currentParts.forEach(part => {
-    const content = part.content.trim();
-    if (!content) return;
-
-    if (part.type === "head") {
-      headParts.push(content);
-    } else if (part.type === "css") {
-      headParts.push(`<style>
-${content}
-</style>`);
-    } else if (part.type === "js") {
-      bodyParts.push(`<script>
-${content}
-</script>`);
-    } else if (part.type === "hidden") {
-      bodyParts.push(content);
-    } else {
-      bodyParts.push(content);
-    }
-  });
-
-  return `<!doctype html>
-<html>
-<head>
-${headParts.join("\n")}
-</head>
-<body>
-${bodyParts.join("\n\n")}
-</body>
-</html>`;
-}
-
-function getUnifiedCleanText() {
-  const usableParts = currentParts.filter(part => {
-    return part && part.content && part.content.trim();
-  });
-
-  if (usableParts.length === 1) {
-    return usableParts[0].content.trim();
-  }
-
-  return buildFullFile()
-    .replace(/\n\s*\n\s*\n/g, "\n\n")
-    .trim();
-}
-
-async function copyFinalBuild() {
-  closeOtherEditors();
-
-  const finalCode = getUnifiedCleanText();
-
-  try {
-    await navigator.clipboard.writeText(finalCode);
-
-    if (status) {
-      status.textContent = "COPIED";
-      status.classList.remove("status-faded");
-      status.classList.add("status-green");
-    }
-
-    const copyBtn = document.querySelector(".copy-final-btn");
-    if (copyBtn) {
-      copyBtn.textContent = "COPIED";
-      setTimeout(() => {
-const phrases = [
-  "i got u",
-  "come back soon",
-  "made with luhv",
-  "DDD",
-  "< : 3"
-];
-
-let phraseIndex = 0;
-
-button.textContent = phrases[phraseIndex];
-
-button.addEventListener("click", () => {
-  phraseIndex++;
-
-  if (phraseIndex >= phrases.length) {
-    phraseIndex = 0;
-  }
-
-  button.textContent = phrases[phraseIndex];
-});
-      }, 900);
-    }
-  } catch (err) {
-    alert("Copy failed. Try again.");
-  }
-}
-
-function getSelectedLineGroups() {
-  const groups = {};
-
-  selectedLines.forEach(key => {
-    const [block, line] = key.split(":").map(Number);
-    if (!groups[block]) groups[block] = [];
-    groups[block].push(line);
-  });
-
-  Object.keys(groups).forEach(block => {
-    groups[block].sort((a, b) => a - b);
-  });
-
-  return groups;
-}
-
-function replaceSelectedLinesWithText(newText) {
-  closeOtherEditors();
-
-  const groups = getSelectedLineGroups();
-  const blockIndexes = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  if (!blockIndexes.length) return;
-  saveUndoState();
-
-  const pasteLines = String(newText).split("\n");
-  const firstBlock = blockIndexes[0];
-
-  blockIndexes.forEach(blockIndex => {
-    const part = currentParts[blockIndex];
-    if (!part) return;
-
-    const lines = part.content.split("\n");
-    const selected = new Set(groups[blockIndex]);
-    const minLine = Math.min(...groups[blockIndex]);
-    const insertAt = Math.max(0, minLine - 1);
-
-    const kept = lines.filter((line, i) => !selected.has(i + 1));
-
-    if (blockIndex === firstBlock && newText !== "") {
-      kept.splice(insertAt, 0, ...pasteLines);
-    }
-
-    part.content = kept.join("\n");
-  });
-
-  selectedLines = new Set();
-  renderBlockMode();
-}
-
-function eraseSelectedLines() {
-  replaceSelectedLinesWithText("");
-}
-
-async function pasteIntoSelectedLines() {
-  if (!selectedLines.size) return;
-
-  try {
-    const text = await navigator.clipboard.readText();
-    replaceSelectedLinesWithText(text);
-  } catch (err) {
-    alert("Paste failed. Copy text first.");
-  }
-}
-async function addBetweenSelectedLines() {
-  if (selectedLines.size !== 2) return;
-
-  const selected = [...selectedLines].map(key => {
-    const [block, line] = key.split(":").map(Number);
-    return { block, line };
-  });
-
-  if (selected[0].block !== selected[1].block) return;
-
-  selected.sort((a, b) => a.line - b.line);
-
-  if (selected[1].line !== selected[0].line + 1) return;
-
-  const part = currentParts[selected[0].block];
-  if (!part) return;
-
-  try {
-    const text = await navigator.clipboard.readText();
-    if (!text) return;
-
-    saveUndoState();
-
-    const lines = part.content.split("\n");
-    lines.splice(selected[0].line, 0, ...String(text).split("\n"));
-
-    part.content = lines.join("\n");
-    selectedLines = new Set();
-    renderBlockMode();
-  } catch (err) {
-    alert("AND failed. Copy text first.");
-  }
-}
-function buildSelectedLineTools() {
-  const old = document.querySelector(".selected-line-tools");
-  if (old) old.remove();
-
-  const tools = document.createElement("div");
-  tools.className = "selected-line-tools";
-  tools.innerHTML = `
-    <button type="button" class="selected-replace-btn">REPLACE</button>
-    <button type="button" class="selected-and-btn">AND</button>
-    <button type="button" class="selected-erase-btn">ERASE</button>
-  `;
-
-  tools.querySelector(".selected-replace-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    pasteIntoSelectedLines();
-  });
-
-  tools.querySelector(".selected-and-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    addBetweenSelectedLines();
-  });
-
-  tools.querySelector(".selected-erase-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    eraseSelectedLines();
-  });
-
-  document.body.appendChild(tools);
-  updateSelectedLineTools();
-}
-
-
-
-function updateSelectedLineTools() {
-  const tools = document.querySelector(".selected-line-tools");
-  if (!tools) return;
-
-  tools.classList.toggle("show-selected-tools", selectedLines.size > 0);
-
-  const andBtn = tools.querySelector(".selected-and-btn");
-  if (!andBtn) return;
-
-  const selected = [...selectedLines].map(key => {
-    const [block, line] = key.split(":").map(Number);
-    return { block, line };
-  });
-
-  const canAnd =
-    selected.length === 2 &&
-    selected[0].block === selected[1].block &&
-    Math.abs(selected[0].line - selected[1].line) === 1;
-
-  andBtn.disabled = !canAnd;
-  andBtn.classList.toggle("and-ready", canAnd);
-}
-
-document.addEventListener("keydown", e => {
-  if (!selectedLines.size) return;
-  if (e.target.closest("textarea, input, [contenteditable='true']")) return;
-
-  if (e.key === "Backspace" || e.key === "Delete") {
-    e.preventDefault();
-    eraseSelectedLines();
-  }
-});
-
-document.addEventListener("paste", e => {
-  if (!selectedLines.size) return;
-  if (e.target.closest("textarea, input, [contenteditable='true']")) return;
-
-  const text = e.clipboardData.getData("text/plain");
-  if (!text) return;
-
-  e.preventDefault();
-  replaceSelectedLinesWithText(text);
-});
-
-function clearTextSelection() {
-  const selection = window.getSelection();
-  if (selection) selection.removeAllRanges();
-}
-
-function clampNumber(num, min, max) {
-  return Math.max(min, Math.min(max, num));
-}
-
-function autoSizeEditor(editor) {
-  editor.style.height = "auto";
-  editor.style.height = editor.scrollHeight + "px";
-}
-
-function saveTextareaBlock(block) {
-  if (!block.classList.contains("editing-block")) return;
-
-  const editor = block.querySelector(".block-editor");
-  if (!editor) return;
-
-  const index = Number(block.dataset.index);
-  const newText = editor.value;
-
-  if (currentParts[index]) {
-    currentParts[index].content = newText;
-  }
-
-  block.classList.remove("editing-block", "selected-block");
-  block.innerHTML = renderCodeBlockHTML(newText, index, false);
-  clearTextSelection();
-  enableLineNumberToggle();
-  enableFunctionLineTap();
-}
-
-function convertBlockToTextarea(block, start = 0, end = 0) {
-  if (block.classList.contains("editing-block")) return;
-
-  const scrollY = codeView.scrollTop;
-  const index = Number(block.dataset.index);
-
-  expandedBlocks.add(index);
-
-  const text = currentParts[index] ? currentParts[index].content : block.textContent;
-
-  start = clampNumber(start, 0, text.length);
-  end = clampNumber(end, 0, text.length);
-
-  block.classList.add("editing-block", "selected-block");
-  block.innerHTML = "";
-
-  const editor = document.createElement("textarea");
-  editor.className = "block-editor";
-  editor.value = text;
-
-  editor.spellcheck = false;
-  editor.autocapitalize = "off";
-  editor.autocomplete = "off";
-  editor.autocorrect = "off";
-  editor.inputMode = "text";
-
-  block.appendChild(editor);
-
-  editor.addEventListener("input", () => {
-    autoSizeEditor(editor);
-
-    if (currentParts[index]) {
-      currentParts[index].content = editor.value;
-    }
-  });
-
-  editor.addEventListener("blur", () => {
-    saveTextareaBlock(block);
-  });
-
-  requestAnimationFrame(() => {
-    editor.focus({ preventScroll: true });
-    autoSizeEditor(editor);
-    editor.setSelectionRange(start, end);
-    codeView.scrollTop = scrollY;
-  });
-}
-
-function closeOtherEditors(exceptBlock = null) {
-  codeView.querySelectorAll(".code-block.editing-block").forEach(block => {
-    if (block !== exceptBlock) saveTextareaBlock(block);
-  });
-}
-
-function getBlockType(block) {
-  if (block.classList.contains("type-head")) return "head";
-  if (block.classList.contains("type-hidden")) return "hidden";
-  if (block.classList.contains("type-html")) return "html";
-  if (block.classList.contains("type-css")) return "css";
-  if (block.classList.contains("type-js")) return "js";
-  if (block.classList.contains("type-svg")) return "svg";
-  return null;
-}
-
-function setActiveType(type) {
-  closeOtherEditors();
-
-  if (document.body.classList.contains("unified-mode")) {
-    document.body.classList.remove("unified-mode");
-    activeType = type;
-    renderBlockMode();
-  }
-
-  activeType = activeType === type ? null : type;
-
-  const blocks = [...codeView.querySelectorAll(".code-block")];
-  const buttons = [...document.querySelectorAll(".type-tool")];
-
-  buttons.forEach(button => {
-    button.classList.toggle("active-tool", button.dataset.type === activeType);
-  });
-
-  blocks.forEach(block => {
-    const blockType = getBlockType(block);
-
-    block.classList.remove("active-type", "dimmed-type", "selected-block", "dragging-block");
-    block.style.transform = "";
-    block.style.opacity = "";
-
-    if (!activeType) return;
-
-    if (blockType === activeType) {
-      block.classList.add("active-type");
-    } else {
-      block.classList.add("dimmed-type");
-    }
-  });
-
-  clearTextSelection();
-}
-
-function buildTypeToolbar() {
-  const bar = document.createElement("div");
-  bar.className = "type-toolbar";
-
-  ["head", "html", "css", "js", "svg", "hidden"].forEach(type => {
-    const button = document.createElement("button");
-    button.className = `type-tool type-tool-${type}`;
-    button.dataset.type = type;
-    button.textContent = type === "hidden" ? "SRC" : type.toUpperCase();
-    const count = currentParts.filter(part => part && part.type === type).length;
-
-if (!count) {
-  button.classList.add("type-tool-empty");
-  button.disabled = true;
-}
-
-button.addEventListener("click", e => {
-  e.stopPropagation();
-
-  const indexes = currentParts
-    .map((part, index) => part && part.type === type ? index : null)
-    .filter(index => index !== null);
-
-  if (!indexes.length) return;
-
-  const allOpen = indexes.every(index => expandedBlocks.has(index));
-
-  if (allOpen) {
-    indexes.forEach(index => expandedBlocks.delete(index));
-    activeType = null;
-    setPanelColor(null);
-  } else {
-    expandedBlocks.clear();
-
-    indexes.forEach(index => expandedBlocks.add(index));
-    activeType = type;
-    setPanelColor(type);
-  }
-
-  renderBlockMode();
-});
-
-    bar.appendChild(button);
-  });
-
-  codeView.appendChild(bar);
-}
-
-function buildCopyFinalButton() {
-  const button = document.createElement("button");
-  button.className = "copy-final-btn";
-  button.textContent = "COPY ALL";
-
-  button.style.position = "fixed";
-  button.style.right = "18px";
-  button.style.bottom = "76px";
-  button.style.zIndex = "90";
-  button.style.border = "0";
-  button.style.borderRadius = "999px";
-  button.style.padding = "12px 16px";
-  button.style.background = "#111";
-  button.style.color = "white";
-  button.style.fontSize = "11px";
-  button.style.fontWeight = "900";
-  button.style.letterSpacing = ".08em";
-  button.style.boxShadow = "0 10px 24px rgba(0,0,0,.18)";
-  button.style.cursor = "pointer";
-  button.style.touchAction = "manipulation";
-
-  button.addEventListener("pointerdown", e => {
-    e.stopPropagation();
-  });
-
-  button.addEventListener("click", e => {
-    e.stopPropagation();
-    copyFinalBuild();
-  });
-
-  return button;
-}
-
-function enterUnifiedMode() {
-  closeOtherEditors();
-
-  activeType = null;
-  document.body.classList.add("unified-mode");
-  clearTextSelection();
-
-  const clean = getUnifiedCleanText();
-
-  codeView.innerHTML = `
-    <pre>${escapeHTML(clean)}</pre>
-  `;
-
-  codeView.appendChild(buildCopyFinalButton());
-  buildTypeToolbar();
-  enableToolbarSwipe();
-}
-
-function enableToolbarSwipe() {
-  const bar = document.querySelector(".type-toolbar");
-  if (!bar) return;
-
-  let startX = 0;
-  let dx = 0;
-  let dragging = false;
-
-bar.addEventListener("pointerdown", e => {
-
-
-  closeOtherEditors();
-
-  startX = e.clientX;
-  dx = 0;
-  dragging = true;
-  bar.setPointerCapture(e.pointerId);
-});
-
-  bar.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    dx = e.clientX - startX;
-  });
-
-  bar.addEventListener("pointerup", () => {
-    if (!dragging) return;
-    dragging = false;
-
-    if (dx > 70) {
-      enterUnifiedMode();
-    }
-
-    if (dx < -70) {
-      undoLastChange();
-    }
-  });
-
-  bar.addEventListener("pointercancel", () => {
-    dragging = false;
-  });
-}
-
-function enableInsertGapSwipe() {
-  const gaps = [...codeView.querySelectorAll(".insert-gap")];
-
-  gaps.forEach(gap => {
-    let startX = 0;
-    let startY = 0;
-    let dx = 0;
-    let dy = 0;
-    let dragging = false;
-
-    gap.addEventListener("pointerdown", e => {
-      if (document.body.classList.contains("unified-mode")) return;
-
-      startX = e.clientX;
-      startY = e.clientY;
-      dx = 0;
-      dy = 0;
-      dragging = true;
-
-      gap.setPointerCapture(e.pointerId);
-    });
-
-    gap.addEventListener("pointermove", e => {
-      if (!dragging) return;
-
-      dx = e.clientX - startX;
-      dy = e.clientY - startY;
-    });
-
-    gap.addEventListener("pointerup", () => {
-      if (!dragging) return;
-      dragging = false;
-
-      const horizontalSwipe = Math.abs(dx) > 90;
-      const mostlyHorizontal = Math.abs(dx) > Math.abs(dy) * 1.4;
-
-      if (horizontalSwipe && mostlyHorizontal) {
-        const index = Number(gap.dataset.insertIndex);
-        insertEmptyBlock(index);
-      }
-    });
-
-    gap.addEventListener("pointercancel", () => {
-      dragging = false;
-    });
-  });
+    /\bconst\s+[A-Za-z0-9_$]+\s*=/.test(trimmed) ||
+    /\blet\s+[A-Za-z0-9_$]+\s*=/.test(trimmed) ||
+    /\bvar\s+[A-Za-z0-9_$]+\s*=/.test(trimmed);
+
+  const hasCSSBlock =
+    /[.#a-zA-Z0-9_*:\-\s,[\]="'>]+?\s*\{[\s\S]*?\}/.test(trimmed);
+
+  const hasCSSProp =
+    /^[a-z-]+\s*:\s*[^;]+;?$/i.test(trimmed);
+
+  const hasCSSOpenBlock =
+    /^[.#]?[a-zA-Z0-9_-]+\s*\{\s*$/i.test(trimmed);
+
+  const hasAtRule =
+    /^@(media|keyframes|supports|font-face)\b/i.test(trimmed);
+
+  return !startsLikeHTML && !hasJSStructure && (
+    hasCSSBlock ||
+    hasCSSProp ||
+    hasCSSOpenBlock ||
+    hasAtRule
+  );
 }
 
 function findMatchingFunctionEnd(text, startIndex) {
@@ -917,10 +222,12 @@ function findMatchingFunctionEnd(text, startIndex) {
   let escaped = false;
   let inLineComment = false;
   let inBlockComment = false;
+  let inRegex = false;
 
   for (let i = openIndex; i < text.length; i++) {
     const char = text[i];
     const next = text[i + 1];
+    const prev = text[i - 1];
 
     if (inLineComment) {
       if (char === "\n") inLineComment = false;
@@ -954,6 +261,24 @@ function findMatchingFunctionEnd(text, startIndex) {
       continue;
     }
 
+    if (inRegex) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (char === "/" && prev !== "\\") {
+        inRegex = false;
+      }
+
+      continue;
+    }
+
     if (char === "/" && next === "/") {
       inLineComment = true;
       i++;
@@ -966,6 +291,11 @@ function findMatchingFunctionEnd(text, startIndex) {
       continue;
     }
 
+    if (char === "/" && /[=(,:!?\[{;]\s*$/.test(text.slice(Math.max(0, i - 20), i))) {
+      inRegex = true;
+      continue;
+    }
+
     if (char === "\"" || char === "'" || char === "`") {
       inString = true;
       stringChar = char;
@@ -975,9 +305,7 @@ function findMatchingFunctionEnd(text, startIndex) {
     if (char === "{") depth++;
     if (char === "}") depth--;
 
-    if (depth === 0) {
-      return i + 1;
-    }
+    if (depth === 0) return i + 1;
   }
 
   return null;
