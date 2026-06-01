@@ -730,8 +730,6 @@ function buildTypeToolbar() {
 
 button.addEventListener("click", e => {
   e.stopPropagation();
-  
-  setPanelColor(type);
 
   const indexes = currentParts
     .map((part, index) => part && part.type === type ? index : null)
@@ -741,15 +739,16 @@ button.addEventListener("click", e => {
 
   const allOpen = indexes.every(index => expandedBlocks.has(index));
 
-if (allOpen) {
-  indexes.forEach(index => expandedBlocks.delete(index));
-  activeType = null;
-  setPanelColor(null);
-} else {
+  if (allOpen) {
+    indexes.forEach(index => expandedBlocks.delete(index));
+    activeType = null;
+    setPanelColor(null);
+  } else {
     expandedBlocks.clear();
 
     indexes.forEach(index => expandedBlocks.add(index));
     activeType = type;
+    setPanelColor(type);
   }
 
   renderBlockMode();
