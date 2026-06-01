@@ -727,6 +727,12 @@ function buildTypeToolbar() {
     button.className = `type-tool type-tool-${type}`;
     button.dataset.type = type;
     button.textContent = type === "hidden" ? "SRC" : type.toUpperCase();
+    const count = currentParts.filter(part => part && part.type === type).length;
+
+if (!count) {
+  button.classList.add("type-tool-empty");
+  button.disabled = true;
+}
 
 button.addEventListener("click", e => {
   e.stopPropagation();
