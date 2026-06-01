@@ -16,6 +16,23 @@ let collapsedFunctions = new Set();
 
 let undoStack = [];
 
+const typePanelColors = {
+  head: ["rgba(120,90,170,.20)", "rgba(120,90,170,.09)", "rgba(120,90,170,.16)"],
+  html: ["rgba(180,135,20,.20)", "rgba(180,135,20,.09)", "rgba(180,135,20,.16)"],
+  css: ["rgba(0,150,135,.20)", "rgba(0,150,135,.09)", "rgba(0,150,135,.16)"],
+  js: ["rgba(190,120,0,.20)", "rgba(190,120,0,.09)", "rgba(190,120,0,.16)"],
+  svg: ["rgba(90,60,150,.20)", "rgba(90,60,150,.09)", "rgba(90,60,150,.16)"],
+  hidden: ["rgba(0,0,0,.09)", "rgba(0,0,0,.035)", "rgba(0,0,0,.10)"]
+};
+
+function setPanelColor(type){
+  const c = typePanelColors[type] || ["rgba(142,103,58,.20)", "rgba(92,65,35,.10)", "rgba(105,73,38,.13)"];
+
+  document.documentElement.style.setProperty("--type-bg-1", c[0]);
+  document.documentElement.style.setProperty("--type-bg-2", c[1]);
+  document.documentElement.style.setProperty("--type-border", c[2]);
+}
+
 function saveUndoState() {
   undoStack.push({
     parts: JSON.parse(JSON.stringify(currentParts)),
@@ -713,6 +730,8 @@ function buildTypeToolbar() {
 
 button.addEventListener("click", e => {
   e.stopPropagation();
+  
+  setPanelColor(type);
 
   const indexes = currentParts
     .map((part, index) => part && part.type === type ? index : null)
@@ -722,10 +741,11 @@ button.addEventListener("click", e => {
 
   const allOpen = indexes.every(index => expandedBlocks.has(index));
 
-  if (allOpen) {
-    indexes.forEach(index => expandedBlocks.delete(index));
-    activeType = null;
-  } else {
+if (allOpen) {
+  indexes.forEach(index => expandedBlocks.delete(index));
+  activeType = null;
+  setPanelColor(null);
+} else {
     expandedBlocks.clear();
 
     indexes.forEach(index => expandedBlocks.add(index));
