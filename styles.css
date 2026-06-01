@@ -604,6 +604,16 @@ body.unified-mode .code-block{
   flex:0 0 auto;
 }
 
+.type-tool-empty{
+  opacity:.28;
+  filter:grayscale(1);
+  box-shadow:none !important;
+}
+
+.type-tool-empty:active{
+  transform:none;
+}
+
 .type-tool-head{color:rgba(90,70,120,.95);background:rgba(120,90,170,.10);}
 .type-tool-hidden{color:rgba(80,80,80,.95);background:rgba(0,0,0,.055);}
 .type-tool-html{color:rgba(120,90,10,.95);background:rgba(180,135,20,.10);}
