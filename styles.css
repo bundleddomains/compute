@@ -724,3 +724,10 @@ body.unified-mode .code-block{
   content:" +";
   opacity:.5;
 }
+
+/* hide artwork whenever the code view is open */
+#codeView:not(.hidden) ~ #scene .front-art-layer,
+#codeView:not(.hidden) ~ #scene .bottom-art-layer,
+#codeView:not(.hidden) ~ .bottom-art-layer{
+  display: none;
+}
