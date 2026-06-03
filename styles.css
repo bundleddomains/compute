@@ -191,24 +191,25 @@ body.unified-mode{
 }
 
 .bottom-art-layer{
-  position: relative;
-  z-index: 25;
+  position: absolute;
+  z-index: 26;
 
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  left: 54px;
+  top: 430px;
 
-  margin-top: 18px;
+  width: auto;
+  display: block;
+
   pointer-events: none;
 }
 
 .bottom-art{
-  width: min(72vw, 320px);
+  width: 190px;
   height: auto;
+
   display: block;
   object-fit: contain;
 }
-
 
 .ghost-title{
   position:absolute;
