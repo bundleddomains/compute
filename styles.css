@@ -195,14 +195,10 @@ body.unified-mode{
   z-index: 26;
 
   left: 95px;
-  top: 720px;
-
-  width: auto;
-  display: block;
+  top: 610px;
 
   pointer-events: none;
 }
-
 .bottom-art{
   width: 190px;
   height: auto;
